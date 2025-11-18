@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Detallado - Google Sheets</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .step { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007bff; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .code { background: #f1f1f1; padding: 10px; font-family: monospace; white-space: pre-wrap; }
+        .log { background: #000; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Detallado - Google Sheets</h1>
+    
+    <div id="logs" class="log"></div>
+    <div id="results"></div>
+    
+    <script src="config.js"></script>
+    <script src="google-sheets-config.js"></script>
+    <script>
+        const logs = document.getElementById('logs');
+        const results = document.getElementById('results');
+        
+        function log(message) {
+            console.log(message);
+            logs.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        async function debugDetailed() {
+            try {
+                log('🔄 Iniciando debug detallado...');
+                
+                // Paso 1: Verificar configuración
+                log('📋 Verificando configuración...');
+                const config = SHEETS_CONFIG;
+                log(`Spreadsheet ID: ${config.spreadsheetId}`);
+                log(`Sheet Name: ${config.sheetName}`);
+                log(`API Key: ${config.options.apiKey ? 'Configurada ✓' : 'No configurada ✗'}`);
+                
+                if (!config.options.apiKey) {
+                    results.innerHTML = '<div class="error">❌ API Key no configurada</div>';
+                    return;
+                }
+                
+                // Paso 2: Verificar spreadsheet metadata
+                log('🔍 Verificando spreadsheet metadata...');
+                const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}?key=${config.options.apiKey}`;
+                log(`URL: ${metaUrl}`);
+                
+                const metaResponse = await fetch(metaUrl);
+                log(`Status metadata: ${metaResponse.status} ${metaResponse.statusText}`);
+                
+                if (!metaResponse.ok) {
+                    const metaError = await metaResponse.text();
+                    log(`Error metadata: ${metaError}`);
+                    results.innerHTML = `<div class="error">❌ Error accediendo metadata: ${metaResponse.status}</div>`;
+                    return;
+                }
+                
+                const metaData = await metaResponse.json();
+                log(`Spreadsheet encontrado: ${metaData.properties?.title}`);
+                
+                // Verificar hojas
+                const sheets = metaData.sheets || [];
+                log(`Hojas encontradas: ${sheets.map(s => s.properties.title).join(', ')}`);
+                
+                const sheetExists = sheets.some(sheet => sheet.properties.title === config.sheetName);
+                if (!sheetExists) {
+                    log(`❌ Hoja "${config.sheetName}" no existe`);
+                    results.innerHTML = `<div class="error">❌ La hoja "${config.sheetName}" no existe</div>`;
+                    return;
+                }
+                
+                // Paso 3: Intentar leer datos
+                log('📊 Intentando leer datos...');
+                const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodeURIComponent(config.sheetName)}?key=${config.options.apiKey}`;
+                log(`URL datos: ${dataUrl}`);
+                
+                const dataResponse = await fetch(dataUrl);
+                log(`Status datos: ${dataResponse.status} ${dataResponse.statusText}`);
+                
+                if (!dataResponse.ok) {
+                    const dataError = await dataResponse.text();
+                    log(`Error datos: ${dataError}`);
+                    results.innerHTML = `<div class="error">❌ Error leyendo datos: ${dataResponse.status}</div>`;
+                    return;
+                }
+                
+                const data = await dataResponse.json();
+                log(`Datos recibidos: ${data.values ? data.values.length + ' filas' : 'Sin datos'}`);
+                
+                if (!data.values || data.values.length === 0) {
+                    log('❌ No hay datos en la hoja');
+                    results.innerHTML = '<div class="warning">⚠️ La hoja está vacía</div>';
+                    return;
+                }
+                
+                // Paso 4: Procesar datos
+                log('🔄 Procesando datos...');
+                const processedData = processSheetData(data.values);
+                log(`Datos procesados: ${processedData.length} eventos`);
+                
+                // Mostrar éxito
+                results.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Todo Funciona Correctamente!</h3>
+                        <p><strong>${processedData.length} eventos cargados</strong></p>
+                        <p>La aplicación está lista para usar.</p>
+                    </div>
+                `;
+                
+                // Mostrar primeros eventos
+                let eventsHTML = '<h3>📅 Primeros Eventos:</h3>';
+                processedData.slice(0, 3).forEach((event, index) => {
+                    eventsHTML += `
+                        <div class="step">
+                            <strong>${index + 1}. ${event.titulo}</strong><br>
+                            📅 ${event.fecha} a las ${event.hora}<br>
+                            📍 ${event.area} | 🏷️ ${event.tipo}
+                        </div>
+                    `;
+                });
+                results.innerHTML += eventsHTML;
+                
+            } catch (error) {
+                log(`❌ Error general: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Iniciar debug
+        debugDetailed();
+    </script>
+</body>
+</html>

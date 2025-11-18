@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración Rápida - Sistema de Agenda</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(34, 78, 149, 0.08);
+        }
+        h1 { color: #224e95; }
+        h2 { color: #224e95; border-bottom: 2px solid #e9eef6; padding-bottom: 10px; }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #224e95;
+            border-radius: 0 8px 8px 0;
+        }
+        .code {
+            background: #212529;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d1e7dd;
+            border: 1px solid #198754;
+            color: #0f5132;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .button {
+            background: #224e95;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .config-section {
+            border: 2px dashed #dee2e6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #e9eef6;
+            color: #224e95;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Configuración Rápida del Sistema de Agenda</h1>
+        
+        <div class="success">
+            <strong>¡Perfecto!</strong> Tienes todos los archivos del sistema. Sigue estos pasos para conectarlo a tu Google Sheet.
+        </div>
+
+        <h2>📋 Paso 1: Crear tu Google Sheet</h2>
+        
+        <div class="step">
+            <h3>1.1 Crear el Google Sheet</h3>
+            <p>Ve a <a href="https://sheets.google.com" target="_blank">Google Sheets</a> y crea una nueva hoja con estas columnas (A a L):</p>
+            
+            <table>
+                <tr>
+                    <th>Columna</th>
+                    <th>Campo</th>
+                    <th>Ejemplo</th>
+                </tr>
+                <tr><td>A</td><td>titulo</td><td>Taller de Metodología</td></tr>
+                <tr><td>B</td><td>descripcion</td><td>Metodologías avanzadas...</td></tr>
+                <tr><td>C</td><td>fecha</td><td>2024-12-15</td></tr>
+                <tr><td>D</td><td>hora</td><td>09:00</td></tr>
+                <tr><td>E</td><td>duracion</td><td>4 horas</td></tr>
+                <tr><td>F</td><td>area</td><td>gestion_investigacion</td></tr>
+                <tr><td>G</td><td>tipo</td><td>taller</td></tr>
+                <tr><td>H</td><td>dirigido_a</td><td>Investigadores senior</td></tr>
+                <tr><td>I</td><td>imagen</td><td>https://...</td></tr>
+                <tr><td>J</td><td>enlace</td><td>https://...</td></tr>
+                <tr><td>K</td><td>estado</td><td>disponible</td></tr>
+                <tr><td>L</td><td>responsable</td><td>Luz Piedad</td></tr>
+            </table>
+        </div>
+
+        <div class="step">
+            <h3>1.2 Llenar con datos de ejemplo</h3>
+            <p>Agrega algunas filas de ejemplo. Los valores para <strong>area</strong> pueden ser:</p>
+            <ul>
+                <li><code>gestion_investigacion</code></li>
+                <li><code>transferencia_resultados</code></li>
+                <li><code>laboratorios</code></li>
+                <li><code>editorial</code></li>
+                <li><code>relaciones_internacionales</code></li>
+                <li><code>apropiacion_social</code></li>
+            </ul>
+            
+            <p>Los valores para <strong>tipo</strong> pueden ser:</p>
+            <ul>
+                <li><code>curso</code></li>
+                <li><code>taller</code></li>
+                <li><code>diplomado</code></li>
+                <li><code>conferencia</code></li>
+                <li><code>socializacion</code></li>
+            </ul>
+        </div>
+
+        <h2>🔑 Paso 2: Obtener Google Sheets API Key</h2>
+        
+        <div class="step">
+            <h3>2.1 Crear Proyecto en Google Cloud</h3>
+            <ol>
+                <li>Ve a <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                <li>Crea un nuevo proyecto o selecciona uno existente</li>
+                <li>Ve a "APIs y servicios" → "Biblioteca"</li>
+                <li>Busca "Google Sheets API" y haz clic en "Habilitar"</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>2.2 Crear API Key</h3>
+            <ol>
+                <li>Ve a "APIs y servicios" → "Credenciales"</li>
+                <li>Clic en "Crear credenciales" → "Clave de API"</li>
+                <li>Copia la API key generada</li>
+                <li>Clic en "Restricciones de API"</li>
+                <li>Selecciona "Google Sheets API" y guarda</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>2.3 Configurar Permisos del Sheet</h3>
+            <ol>
+                <li>Abre tu Google Sheet</li>
+                <li>Clic en "Compartir" (esquina superior derecha)</li>
+                <li>Selecciona "Cualquier persona con el enlace puede ver"</li>
+                <li>Copiar el ID del spreadsheet de la URL</li>
+            </ol>
+            
+            <div class="warning">
+                <strong>Importante:</strong> Copia el ID del spreadsheet de la URL. Ejemplo:
+                <br>URL: <code>https://docs.google.com/spreadsheets/d/<strong>1ABC123XYZ</strong>/edit</code>
+                <br>ID: <code>1ABC123XYZ</code>
+            </div>
+        </div>
+
+        <h2>⚙️ Paso 3: Configurar el Código</h2>
+        
+        <div class="config-section">
+            <h3>3.1 Editar google-sheets-config.js</h3>
+            <p>Reemplaza el contenido del archivo <code>google-sheets-config.js</code> con esto:</p>
+            
+            <div class="code">
+const SHEETS_CONFIG = {
+    spreadsheetId: 'TU_SPREADSHEET_ID_AQUI',  // Reemplaza con tu ID
+    sheetName: 'Formación',                    // Nombre de tu hoja
+    columns: {
+        titulo: 0, descripcion: 1, fecha: 2, hora: 3,
+        duracion: 4, area: 5, tipo: 6, dirigido_a: 7,
+        imagen: 8, enlace: 9, estado: 10, responsable: 11
+    },
+    options: {
+        useSampleData: false,                  // CAMBIAR A false
+        apiKey: 'TU_API_KEY_AQUI'              // Reemplazar con tu API key
+    }
+};</div>
+        </div>
+
+        <div class="step">
+            <h3>3.2 Reemplazar en app.js</h3>
+            <p>En el archivo <code>app.js</code>, reemplaza la función <code>loadFromGoogleSheets()</code> para usar la configuración:</p>
+            
+            <div class="code">
+// Reemplazar esta función en app.js:
+async function loadFromGoogleSheets() {
+    const config = SHEETS_CONFIG;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${config.sheetName}?key=${config.options.apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
+    return processSheetData(data.values);
+}</div>
+        </div>
+
+        <div class="warning">
+            <strong>Importante:</strong> Asegúrate de que las funciones de normalización de datos estén incluidas en el código.
+        </div>
+
+        <h2>✅ Paso 4: Probar el Sistema</h2>
+        
+        <div class="step">
+            <ol>
+                <li>Sube todos los archivos a tu servidor web</li>
+                <li>Abre el sitio en tu navegador</li>
+                <li>Deberías ver tus eventos del Google Sheet</li>
+                <li>Si no funciona, revisa la consola del navegador para errores</li>
+            </ol>
+        </div>
+
+        <h2>🎯 Estructura Final de Archivos</h2>
+        
+        <div class="code">
+tu-sitio/
+├── index.html              # Página principal
+├── styles.css              # Estilos
+├── app.js                  # Funcionalidad JavaScript
+├── google-sheets-config.js # Configuración Google Sheets
+└── README.md              # Documentación completa</div>
+
+        <div class="success">
+            <strong>¡Listo!</strong> Tu sistema de agenda está configurado y conectado a Google Sheets. Los cambios en el sheet se reflejarán automáticamente en el sitio web.
+        </div>
+
+        <h2>🆘 Problemas Comunes</h2>
+        
+        <div class="step">
+            <h3>Error 403 (Acceso denegado)</h3>
+            <p>Verifica que el Google Sheet tenga permisos "Cualquier persona con el enlace puede ver"</p>
+            
+            <h3>Error 404 (Sheet no encontrado)</h3>
+            <p>Verifica que el Spreadsheet ID sea correcto y que exista</p>
+            
+            <h3>No aparecen los eventos</h3>
+            <p>Revisa que tengas datos en las filas (no solo en los headers) y que las fechas estén en formato YYYY-MM-DD</p>
+        </div>
+
+        <div class="warning">
+            <strong>Recordatorio:</strong> El sistema está configurado para usar datos de ejemplo inicialmente. No olvides cambiar <code>useSampleData: false</code> en la configuración.
+        </div>
+
+        <h2>📞 Soporte</h2>
+        
+        <div class="step">
+            <p>Si tienes problemas:</p>
+            <ul>
+                <li>Revisa el <code>README.md</code> para documentación completa</li>
+                <li>Verifica la consola del navegador para errores</li>
+                <li>Confirma que la Google Sheets API esté habilitada</li>
+                <li>Verifica los permisos del Google Sheet</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

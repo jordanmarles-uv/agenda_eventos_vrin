@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .image-test {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .event-image-container {
+            width: 100%;
+            height: 180px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px 16px 0 0;
+        }
+        .event-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test de Carga de Imágenes</h1>
+        
+        <h2>Imagen por defecto (Picsum)</h2>
+        <div class="event-image-container">
+            <img src="https://picsum.photos/400/225" alt="Imagen por defecto" class="event-image">
+        </div>
+        
+        <h2>Imagen Unsplash 1</h2>
+        <div class="event-image-container">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=225&fit=crop" alt="Unsplash 1" class="event-image">
+        </div>
+        
+        <h2>Imagen Unsplash 2</h2>
+        <div class="event-image-container">
+            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=225&fit=crop" alt="Unsplash 2" class="event-image">
+        </div>
+        
+        <h2>Imagen con error (debería mostrar broken)</h2>
+        <div class="event-image-container">
+            <img src="https://url-que-no-existe.com/image.jpg" alt="Imagen rota" class="event-image">
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Test de carga de imágenes
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('img');
+            const results = document.getElementById('results');
+            
+            let loadedCount = 0;
+            let errorCount = 0;
+            
+            images.forEach((img, index) => {
+                img.onload = function() {
+                    loadedCount++;
+                    console.log(`✅ Imagen ${index + 1} cargada: ${img.src}`);
+                    updateResults();
+                };
+                
+                img.onerror = function() {
+                    errorCount++;
+                    console.error(`❌ Error cargando imagen ${index + 1}: ${img.src}`);
+                    updateResults();
+                };
+            });
+            
+            function updateResults() {
+                const total = images.length;
+                if (loadedCount + errorCount === total) {
+                    results.innerHTML = `
+                        <h3>📊 Resultados del Test</h3>
+                        <p><strong>Total de imágenes:</strong> ${total}</p>
+                        <p><strong>✅ Cargadas correctamente:</strong> ${loadedCount}</p>
+                        <p><strong>❌ Con errores:</strong> ${errorCount}</p>
+                        <p><strong>📈 Tasa de éxito:</strong> ${Math.round((loadedCount/total) * 100)}%</p>
+                    `;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

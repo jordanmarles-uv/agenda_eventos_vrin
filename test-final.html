@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Final - Conexión Corregida</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { margin: 15px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Final - Conexión Corregida</h1>
+    
+    <div id="results" class="loading">🔄 Probando conexión...</div>
+    
+    <script src="config.js"></script>
+    <script src="google-sheets-config.js"></script>
+    <script>
+        async function testConnection() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Mostrar configuración actual
+                results.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Configuración Actualizada:</h3>
+                        <p><strong>Spreadsheet ID:</strong> ${SHEETS_CONFIG.spreadsheetId}</p>
+                        <p><strong>Nombre de Hoja:</strong> ${SHEETS_CONFIG.sheetName}</p>
+                        <p><strong>API Key:</strong> ${SHEETS_CONFIG.options.apiKey ? 'Configurada ✓' : 'No configurada ✗'}</p>
+                    </div>
+                    <div class="loading">🔄 Conectando...</div>
+                `;
+                
+                // Probar conexión
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_CONFIG.spreadsheetId}/values/${encodeURIComponent(SHEETS_CONFIG.sheetName)}?key=${SHEETS_CONFIG.options.apiKey}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length === 0) {
+                    results.innerHTML += `
+                        <div class="error">
+                            <h3>❌ Problema:</h3>
+                            <p>La hoja está vacía o no tiene datos</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Mostrar datos exitosos
+                const headers = data.values[0];
+                const rows = data.values.slice(1, 6); // Primeras 5 filas
+                
+                let tableHTML = `
+                    <div class="success">
+                        <h3>✅ Conexión Exitosa!</h3>
+                        <p><strong>Se encontraron ${data.values.length} filas de datos</strong></p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    ${headers.map(header => `<th>${header || ''}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `
+                                    <tr>
+                                        ${row.map(cell => `<td>${cell || ''}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                results.innerHTML = tableHTML;
+                
+                // Mensaje de éxito
+                results.innerHTML += `
+                    <div class="success">
+                        <h3>🎉 ¡Sistema Listo!</h3>
+                        <p>La conexión a Google Sheets está funcionando correctamente.</p>
+                        <p>Ahora puedes abrir <strong>index.html</strong> para ver la agenda con datos reales.</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error de Conexión:</h3>
+                        <p>${error.message}</p>
+                        <p><strong>Verifica:</strong></p>
+                        <ul>
+                            <li>Que el Spreadsheet esté compartido públicamente</li>
+                            <li>Que la API Key sea válida</li>
+                            <li>Que el nombre de la hoja sea exactamente "Sheet1"</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+        
+        // Ejecutar test
+        testConnection();
+    </script>
+</body>
+</html>

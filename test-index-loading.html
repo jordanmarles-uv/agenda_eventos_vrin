@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Index Loading</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; }
+        .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; }
+        .log { background: #000; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Index Loading</h1>
+    
+    <div id="log" class="log"></div>
+    <div id="results"></div>
+    
+    <!-- MISMO ORDEN QUE INDEX.HTML -->
+    <script src="config.js"></script>
+    <script src="google-sheets-config.js"></script>
+    <script>
+        const log = document.getElementById('log');
+        const results = document.getElementById('results');
+        
+        function addLog(message) {
+            console.log(message);
+            log.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        async function testIndexLoading() {
+            try {
+                addLog('🔄 Iniciando test de carga...');
+                
+                // Verificar configuración disponible
+                addLog('📋 Verificando configuración global...');
+                addLog(`window.APP_CONFIG disponible: ${!!window.APP_CONFIG}`);
+                addLog(`window.CONFIG disponible: ${!!window.CONFIG}`);
+                
+                if (window.APP_CONFIG) {
+                    addLog(`API Key en APP_CONFIG: ${window.APP_CONFIG.GOOGLE_SHEETS_API_KEY ? '✅' : '❌'}`);
+                }
+                
+                if (window.CONFIG) {
+                    addLog(`API Key en CONFIG: ${window.CONFIG.GOOGLE_SHEETS_API_KEY ? '✅' : '❌'}`);
+                }
+                
+                // Verificar SHEETS_CONFIG
+                addLog('🗂️ Verificando SHEETS_CONFIG...');
+                const config = SHEETS_CONFIG;
+                addLog(`SHEETS_CONFIG disponible: ${!!config}`);
+                addLog(`Spreadsheet ID: ${config.spreadsheetId}`);
+                addLog(`Sheet Name: ${config.sheetName}`);
+                
+                // Verificar API Key dinámica
+                addLog('🔑 Verificando API Key...');
+                const apiKey = config.options.apiKey;
+                addLog(`API Key disponible: ${apiKey ? '✅' : '❌'}`);
+                addLog(`API Key length: ${apiKey ? apiKey.length : 0}`);
+                
+                if (!apiKey) {
+                    results.innerHTML = '<div class="error">❌ API Key no disponible</div>';
+                    return;
+                }
+                
+                // Intentar cargar datos
+                addLog('📊 Intentando cargar datos...');
+                const result = await loadFromGoogleSheets();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    addLog(`✅ Éxito! ${result.data.length} eventos cargados`);
+                    results.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Carga Exitosa!</h3>
+                            <p><strong>${result.data.length} eventos cargados</strong></p>
+                            <p>Index.html debería funcionar correctamente.</p>
+                        </div>
+                    `;
+                } else {
+                    addLog(`❌ Error: ${result.error || 'Error desconocido'}`);
+                    results.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Error en la carga</h3>
+                            <p>${result.error || 'Error desconocido'}</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error general: ${error.message}`);
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Iniciar test cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', testIndexLoading);
+    </script>
+</body>
+</html>
