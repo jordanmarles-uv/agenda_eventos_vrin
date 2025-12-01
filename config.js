@@ -1,6 +1,6 @@
 // Configuración de variables de entorno
 const CONFIG = {
-    GOOGLE_SHEETS_API_KEY: 'AIzaSyBVzq74cE3qC5nNVH--0mfjdSX7w7NP-a4',
+    GOOGLE_SHEETS_API_KEY: 'AIzaSyBFnL21PJKs-KEcyRm_dslFy1ytMQAzoe0',
     // Agrega aquí otras variables de entorno según sea necesario
 };
 

@@ -1,20 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description"
+        content="Agenda de eventos de formación, talleres y diplomados de la Vicerrectoría de Investigaciones">
+    <meta name="keywords" content="investigación, talleres, cursos, diplomados, eventos académicos">
+    <meta name="theme-color" content="#E81C25">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="Agenda de Eventos - Vicerrectoría de Investigaciones">
+    <meta property="og:description" content="Descubre eventos de formación, talleres y diplomados">
+    <meta property="og:type" content="website">
+
     <title>Agenda de Eventos - Vicerrectoría de Investigaciones</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=999">
+    <link rel="stylesheet" href="calendar-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Libraries -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
+
 <body>
     <main class="container">
         <!-- Header -->
         <header class="header">
-            <h1>Agenda de Eventos</h1>
-            <p class="subtitle">Formación, Talleres y Diplomados - Vicerrectoría de Investigaciones</p>
+            <img src="https://viceinvestigaciones.univalle.edu.co/images/logo_viceinvestigaciones.png"
+                alt="Logo Vicerrectoría de Investigaciones" class="header-logo">
+            <div class="header-content">
+                <h1>Agenda de Eventos</h1>
+                <p class="subtitle">Formación, Talleres y Diplomados</p>
+            </div>
         </header>
 
         <!-- View Toggle -->
@@ -41,62 +65,100 @@
             </button>
         </div>
 
-        <!-- Filters -->
-        <section class="filters">
-            <div class="filter-group">
-                <label>Área de Gestión:</label>
-                <div class="filter-pills" id="areaFilters">
-                    <button class="pill-btn active" data-filter="todos">Todos</button>
-                    <button class="pill-btn" data-filter="gestion_investigacion">Gestión de la Investigación</button>
-                    <button class="pill-btn" data-filter="transferencia_resultados">Transferencia de Resultados</button>
-                    <button class="pill-btn" data-filter="laboratorios">Laboratorios</button>
-                    <button class="pill-btn" data-filter="editorial">Programa Editorial</button>
-                    <button class="pill-btn" data-filter="relaciones_internacionales">Relaciones Internacionales</button>
+        <!-- ===== FILTER TOOLBAR (All filters visible) ===== -->
+        <section class="filter-toolbar">
+            <div class="toolbar-container">
+                <!-- Tipo Filter -->
+                <div class="filter-group">
+                    <label for="typeFilter" class="filter-label">Tipo</label>
+                    <select id="typeFilter" class="filter-select">
+                        <option value="todos">Todos</option>
+                        <option value="curso">Cursos</option>
+                        <option value="taller">Talleres</option>
+                        <option value="diplomado">Diplomados</option>
+                        <option value="conferencia">Conferencias</option>
+                        <option value="socializacion">Socialización</option>
+                    </select>
                 </div>
-            </div>
-            
-            <div class="filter-group">
-                <label>Mes:</label>
-                <select id="monthFilter" class="filter-select">
-                    <option value="todos">Todos los meses</option>
-                </select>
-            </div>
 
-            <div class="filter-group">
-                <label>Tipo de Actividad:</label>
-                <div class="filter-pills" id="typeFilters">
-                    <button class="pill-btn active" data-filter="todos">Todos</button>
-                    <button class="pill-btn" data-filter="curso">Curso</button>
-                    <button class="pill-btn" data-filter="taller">Taller</button>
-                    <button class="pill-btn" data-filter="diplomado">Diplomado</button>
-                    <button class="pill-btn" data-filter="conferencia">Conferencia</button>
-                    <button class="pill-btn" data-filter="socializacion">Socialización</button>
+                <!-- Fecha Filter -->
+                <div class="filter-group">
+                    <label for="dateFilter" class="filter-label">Fecha</label>
+                    <input type="text" id="dateFilter" class="filter-select" placeholder="Seleccionar rango...">
                 </div>
+
+                <!-- Modalidad Filter -->
+                <div class="filter-group">
+                    <label for="modalidadFilter" class="filter-label">Modalidad</label>
+                    <select id="modalidadFilter" class="filter-select">
+                        <option value="todos">Todas</option>
+                        <option value="virtual">Virtual</option>
+                        <option value="presencial">Presencial</option>
+                        <option value="hibrido">Híbrido</option>
+                        <option value="asincronico">Asincrónico</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Unidad de Gestión Filter (renamed from Dirigido a) -->
+                <div class="filter-group">
+                    <label for="unidadFilter" class="filter-label">Unidad de Gestión</label>
+                    <select id="unidadFilter" class="filter-select">
+                        <option value="todos">Todas</option>
+                        <option value="gestion_investigacion">Gestión de la Investigación</option>
+                        <option value="transferencia_resultados">Transferencia de Resultados</option>
+                        <option value="laboratorios">Laboratorios</option>
+                        <option value="editorial">Programa Editorial</option>
+                        <option value="relaciones_internacionales">Relaciones Internacionales</option>
+                        <option value="apropiacion_social">Apropiación Social</option>
+                    </select>
+                </div>
+
+                <!-- NEW: Temática Filter -->
+                <div class="filter-group">
+                    <label for="tematicaFilter" class="filter-label">Temática</label>
+                    <select id="tematicaFilter" class="filter-select">
+                        <option value="todos">Todas</option>
+                        <option value="etica_integridad">Ética e Integridad</option>
+                        <option value="gestion_proyectos">Gestión de Proyectos</option>
+                        <option value="visibilidad_impacto">Visibilidad e Impacto</option>
+                        <option value="transferencia_pi">Transferencia y Propiedad Intelectual</option>
+                        <option value="emprendimiento_tech">Emprendimiento Tecnológico</option>
+                        <option value="libros_autores">Libros y Autores</option>
+                        <option value="escritura_cientifica">Escritura Científica</option>
+                        <option value="becas_movilidad">Becas y Movilidad</option>
+                        <option value="cooperacion_global">Cooperación Global</option>
+                        <option value="innovacion_educativa">Innovación Educativa</option>
+                        <option value="tecnologia_educativa">Tecnología Educativa</option>
+                        <option value="gestion_laboratorios">Gestión y Calidad de Laboratorios</option>
+                        <option value="apropiacion_social_tematica">Apropiación Social</option>
+                    </select>
+                </div>
+
+                <!-- Estado Filter -->
+                <div class="filter-group">
+                    <label for="estadoFilter" class="filter-label">Estado</label>
+                    <select id="estadoFilter" class="filter-select">
+                        <option value="todos">Todos</option>
+                        <option value="abierta" selected>Abierta</option>
+                        <option value="cerrada">Cerrada</option>
+                    </select>
+                </div>
+
+                <!-- Clear Filters -->
+                <button class="icon-btn" id="clearFiltersBtn" title="Limpiar filtros">
+                    <i class="ph ph-trash"></i>
+                </button>
             </div>
         </section>
 
-        <!-- Calendar View -->
+        <!-- Calendar View (FullCalendar) -->
         <section id="calendarSection" class="calendar-section">
-            <div class="calendar-header">
-                <button id="prevMonth" class="calendar-nav">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15,18 9,12 15,6"></polyline>
-                    </svg>
-                </button>
-                <h2 id="currentMonth"></h2>
-                <button id="nextMonth" class="calendar-nav">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9,18 15,12 9,6"></polyline>
-                    </svg>
-                </button>
-            </div>
-            <div id="calendarGrid" class="calendar-grid">
-                <!-- Calendar will be generated by JavaScript -->
-            </div>
+            <div id="calendarGrid"></div> <!-- FullCalendar injects here -->
         </section>
 
         <!-- Events List -->
-        <section id="eventsSection" class="events-section">
+        <section id="eventsSection" class="events-section" style="display: none;">
             <div class="events-header">
                 <h2 id="eventsTitle">Eventos Disponibles</h2>
                 <span id="eventsCount" class="events-count">0 eventos</span>
@@ -143,7 +205,10 @@
 
     <script src="config.js"></script>
     <script src="google-sheets-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
     <script src="debug.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=999"></script>
 </body>
+
 </html>
