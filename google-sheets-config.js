@@ -165,7 +165,7 @@ function processSheetData(rows) {
             tipo: getColumnValue(row, columnMapping.tipo) || '',
             titulo: getColumnValue(row, columnMapping.titulo) || '',
             descripcion: getColumnValue(row, columnMapping.descripcion) || '',
-            estado: normalizeStatus(getColumnValue(row, columnMapping.estado)) || 'disponible',
+            estado: getColumnValue(row, columnMapping.estado) || '',
             dirigido_a: getColumnValue(row, columnMapping.dirigido_a) || '',
             modalidad: getColumnValue(row, columnMapping.modalidad) || '',
             unidad_gestion: getColumnValue(row, columnMapping.unidad_gestion) || '',
@@ -183,7 +183,9 @@ function processSheetData(rows) {
             duracion_semanas: getColumnValue(row, columnMapping.duracion_semanas) || '',
             mes: getColumnValue(row, columnMapping.mes) || '',
             imagen: getColumnValue(row, columnMapping.imagen) || '',
-            enlace: getColumnValue(row, columnMapping.enlace) || ''
+            enlace: getColumnValue(row, columnMapping.enlace) || '',
+            presentacion: getColumnValue(row, columnMapping.presentacion) || '',
+            video: getColumnValue(row, columnMapping.video) || ''
         };
 
         // VALIDACIÓN DE CAMPOS OBLIGATORIOS
@@ -341,6 +343,16 @@ function detectColumnMapping(headers) {
             mapping.enlace = index;
             headerMap[index] = 'enlace';
         }
+        // Presentación
+        else if (normalizedHeader.includes('presentación') || normalizedHeader.includes('presentacion')) {
+            mapping.presentacion = index;
+            headerMap[index] = 'presentacion';
+        }
+        // Video
+        else if (normalizedHeader.includes('video')) {
+            mapping.video = index;
+            headerMap[index] = 'video';
+        }
     });
 
     console.log('🗺️ Header mapping detectado:', headerMap);
@@ -481,6 +493,9 @@ function normalizeType(tipo) {
 }
 
 function normalizeStatus(estado) {
+    // Si no hay estado, devolver vacío para que getEventStatus lo maneje como 'cerrada'
+    if (!estado || estado.trim() === '') return '';
+
     const statusMap = {
         'disponible': 'disponible',
         'abierto': 'disponible',
@@ -499,8 +514,6 @@ function normalizeStatus(estado) {
         'cancelado': 'cancelado',
         'cancelada': 'cancelado'
     };
-
-    if (!estado) return 'disponible';
 
     const normalized = estado.toLowerCase().trim();
     return statusMap[normalized] || normalized.replace(/\s+/g, '_');

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Filtro de Estado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #E81C25;
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #E81C25;
+            padding-bottom: 10px;
+        }
+
+        .event-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        .event-item.abierta {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .event-item.cerrada {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.abierta {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status.cerrada {
+            background: #f44336;
+            color: white;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .filter-demo {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        #eventCount {
+            font-weight: bold;
+            color: #E81C25;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Test del Filtro de Estado</h1>
+
+    <div class="test-section">
+        <h2>📋 Reglas Implementadas</h2>
+        <ol>
+            <li><strong>Si el evento NO tiene estado</strong> → Se considera <code>CERRADA</code></li>
+            <li><strong>Si el evento tiene estado "abierta", "disponible", "abierto"</strong> → Se considera
+                <code>ABIERTA</code></li>
+            <li><strong>Si el evento tiene estado "cerrada", "cerrado"</strong> → Se considera <code>CERRADA</code></li>
+            <li><strong>Si el evento tiene "cupos llenos" o "cancelado"</strong> → Se considera <code>CERRADA</code>
+            </li>
+            <li><strong>Filtro por defecto</strong> → <code>ABIERTA</code> (solo muestra eventos abiertos)</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Filtro de Prueba</h2>
+        <div class="filter-demo">
+            <label for="estadoFilter">Estado:</label>
+            <select id="estadoFilter">
+                <option value="todos">Todos</option>
+                <option value="abierta" selected>Abierta</option>
+                <option value="cerrada">Cerrada</option>
+            </select>
+            <span id="eventCount">0 eventos</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Eventos de Prueba</h2>
+        <div id="eventsList"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Verificación</h2>
+        <div id="verification"></div>
+    </div>
+
+    <script>
+        // Datos de prueba
+        const testEvents = [
+            { titulo: "Evento 1: Con estado 'abierta'", estado: "abierta" },
+            { titulo: "Evento 2: Con estado 'disponible'", estado: "disponible" },
+            { titulo: "Evento 3: Con estado 'cerrada'", estado: "cerrada" },
+            { titulo: "Evento 4: Con estado 'cerrado'", estado: "cerrado" },
+            { titulo: "Evento 5: Sin estado (vacío)", estado: "" },
+            { titulo: "Evento 6: Sin estado (null)", estado: null },
+            { titulo: "Evento 7: Con estado 'cupos llenos'", estado: "cupos llenos" },
+            { titulo: "Evento 8: Con estado 'cancelado'", estado: "cancelado" },
+            { titulo: "Evento 9: Con estado 'Inscripciones Abiertas'", estado: "Inscripciones Abiertas" },
+            { titulo: "Evento 10: Con estado desconocido 'xyz'", estado: "xyz" }
+        ];
+
+        // Función getEventStatus (copiada de app.js)
+        function getEventStatus(event) {
+            // Si no tiene estado, se considera CERRADA
+            if (!event.estado || event.estado.trim() === '') return 'cerrada';
+
+            const estado = event.estado.toLowerCase().trim();
+
+            // Normalize to abierta/cerrada
+            if (estado.includes('cerrad')) return 'cerrada';
+            if (estado.includes('abierta') || estado.includes('disponible') || estado.includes('abierto')) return 'abierta';
+            if (estado.includes('cupos') || estado.includes('lleno') || estado.includes('cancelad')) return 'cerrada';
+
+            // Default: si no tiene estado claro, se considera CERRADA
+            return 'cerrada';
+        }
+
+        // Función de filtrado
+        function filterEvents() {
+            const estadoValue = document.getElementById('estadoFilter').value;
+
+            const filtered = testEvents.filter(event => {
+                if (estadoValue === 'todos') return true;
+
+                const eventStatus = getEventStatus(event);
+                if (estadoValue === 'abierta' && eventStatus !== 'abierta') return false;
+                if (estadoValue === 'cerrada' && eventStatus !== 'cerrada') return false;
+
+                return true;
+            });
+
+            renderEvents(filtered);
+        }
+
+        // Renderizar eventos
+        function renderEvents(events) {
+            const container = document.getElementById('eventsList');
+            const countEl = document.getElementById('eventCount');
+
+            countEl.textContent = `${events.length} eventos mostrados`;
+
+            container.innerHTML = events.map(event => {
+                const status = getEventStatus(event);
+                const estadoDisplay = event.estado || '(sin estado)';
+
+                return `
+                    <div class="event-item ${status}">
+                        <strong>${event.titulo}</strong><br>
+                        Estado en sheet: <code>${estadoDisplay}</code> → 
+                        Estado calculado: <span class="status ${status}">${status.toUpperCase()}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Verificación
+            runVerification();
+        }
+
+        // Verificación automática
+        function runVerification() {
+            const results = [];
+
+            // Test 1: Eventos sin estado deben ser 'cerrada'
+            const evento5 = getEventStatus(testEvents[4]);
+            const evento6 = getEventStatus(testEvents[5]);
+            results.push({
+                test: "Eventos sin estado = 'cerrada'",
+                pass: evento5 === 'cerrada' && evento6 === 'cerrada',
+                detail: `Evento 5: ${evento5}, Evento 6: ${evento6}`
+            });
+
+            // Test 2: Estados 'abierta', 'disponible' deben ser 'abierta'
+            const evento1 = getEventStatus(testEvents[0]);
+            const evento2 = getEventStatus(testEvents[1]);
+            const evento9 = getEventStatus(testEvents[8]);
+            results.push({
+                test: "Estados variantes de 'abierta' = 'abierta'",
+                pass: evento1 === 'abierta' && evento2 === 'abierta' && evento9 === 'abierta',
+                detail: `Evento 1: ${evento1}, Evento 2: ${evento2}, Evento 9: ${evento9}`
+            });
+
+            // Test 3: Estados 'cerrada', 'cupos llenos', 'cancelado' deben ser 'cerrada'
+            const evento3 = getEventStatus(testEvents[2]);
+            const evento7 = getEventStatus(testEvents[6]);
+            const evento8 = getEventStatus(testEvents[7]);
+            results.push({
+                test: "Estados cerrados = 'cerrada'",
+                pass: evento3 === 'cerrada' && evento7 === 'cerrada' && evento8 === 'cerrada',
+                detail: `Evento 3: ${evento3}, Evento 7: ${evento7}, Evento 8: ${evento8}`
+            });
+
+            // Test 4: Estados desconocidos deben ser 'cerrada'
+            const evento10 = getEventStatus(testEvents[9]);
+            results.push({
+                test: "Estados desconocidos = 'cerrada'",
+                pass: evento10 === 'cerrada',
+                detail: `Evento 10: ${evento10}`
+            });
+
+            // Test 5: Filtro por defecto debe ser 'abierta'
+            const defaultFilter = document.getElementById('estadoFilter').value;
+            results.push({
+                test: "Filtro por defecto = 'abierta'",
+                pass: defaultFilter === 'abierta',
+                detail: `Valor del filtro: ${defaultFilter}`
+            });
+
+            // Renderizar resultados
+            const verificationEl = document.getElementById('verification');
+            const allPass = results.every(r => r.pass);
+
+            verificationEl.innerHTML = `
+                <h3 style="color: ${allPass ? '#4CAF50' : '#f44336'}">
+                    ${allPass ? '✅ TODOS LOS TESTS PASARON' : '❌ ALGUNOS TESTS FALLARON'}
+                </h3>
+                ${results.map(r => `
+                    <div style="padding: 8px; margin: 5px 0; background: ${r.pass ? '#e8f5e9' : '#ffebee'}; border-radius: 4px;">
+                        <strong>${r.pass ? '✅' : '❌'} ${r.test}</strong><br>
+                        <small>${r.detail}</small>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Event listener
+        document.getElementById('estadoFilter').addEventListener('change', filterEvents);
+
+        // Inicializar
+        filterEvents();
+    </script>
+</body>
+
+</html>

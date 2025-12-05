@@ -206,8 +206,50 @@ async function initializeApp() {
 
 // ===== UTILITY FUNCTIONS =====
 
+// Default placeholder image as base64 (red background with "Evento" text)
+const DEFAULT_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI0U4MUMyNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FdmVudG88L3RleHQ+PC9zdmc+';
+
 /**
- * Convert Google Drive share URL to direct image URL
+ * Extract Google Drive file ID from various URL formats
+ * @param {string} url - Google Drive URL
+ * @returns {string|null} File ID or null
+ */
+function extractDriveId(url) {
+    if (!url || !url.includes('drive.google.com')) return null;
+
+    // Format: https://drive.google.com/file/d/FILE_ID/view
+    const match1 = url.match(/\/d\/([^/]+)/);
+    if (match1) return match1[1];
+
+    // Format: https://drive.google.com/open?id=FILE_ID
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2) return match2[1];
+
+    return null;
+}
+
+/**
+ * Convert Google Drive URL to direct viewable image
+ * @param {string} url - Google Drive share URL or regular URL
+ * @returns {string} Direct image URL
+ */
+function convertDriveToWebP(url) {
+    if (!url) return '';
+
+    const driveId = extractDriveId(url);
+
+    if (driveId) {
+        // Use direct Google Drive thumbnail API for faster loading
+        // This returns the image directly without external services
+        return `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+    }
+
+    // If not a Drive URL, return as-is
+    return url;
+}
+
+/**
+ * Convert Google Drive share URL to direct image URL (legacy, kept for compatibility)
  * @param {string} url - Google Drive share URL
  * @returns {string} Direct image URL
  */
@@ -266,16 +308,18 @@ function formatDateDisplay(dateStr) {
  * @returns {string} 'abierta' or 'cerrada'
  */
 function getEventStatus(event) {
-    if (!event.estado) return 'abierta'; // Default if empty
+    // Si no tiene estado, se considera CERRADA
+    if (!event.estado || event.estado.trim() === '') return 'cerrada';
 
     const estado = event.estado.toLowerCase().trim();
 
     // Normalize to abierta/cerrada
     if (estado.includes('cerrad')) return 'cerrada';
-    if (estado.includes('abierta')) return 'abierta';
+    if (estado.includes('abierta') || estado.includes('disponible') || estado.includes('abierto')) return 'abierta';
+    if (estado.includes('cupos') || estado.includes('lleno') || estado.includes('cancelad')) return 'cerrada';
 
-    // Default to abierta for unknown values
-    return 'abierta';
+    // Default: si no tiene estado claro, se considera CERRADA
+    return 'cerrada';
 }
 
 function initializeDatePickers() {
@@ -355,7 +399,7 @@ function initializeCalendar() {
                 }
 
                 // Convert Drive URLs to direct image URLs
-                const imageUrl = convertDriveUrl(event.imagen) || 'https://via.placeholder.com/100x100/E81C25/ffffff?text=Evento';
+                const imageUrl = convertDriveToWebP(event.imagen) || DEFAULT_PLACEHOLDER;
 
                 // Get event status (auto-calculated if not provided)
                 const eventStatus = getEventStatus(event);
@@ -371,7 +415,7 @@ function initializeCalendar() {
                             </div>
                             <div class="event-thumbnail">
                                 ${isClosed ? '<div class="closed-badge-overlay">CERRADA</div>' : ''}
-                                <img src="${imageUrl}" alt="${event.titulo}" onerror="this.src='https://via.placeholder.com/100x100/E81C25/ffffff?text=Evento'">
+                                <img src="${imageUrl}" alt="${event.titulo}" onerror="this.src='${DEFAULT_PLACEHOLDER}'">
                             </div>
                             <div class="event-details">
                                 <h3 class="event-card-title">${event.titulo}</h3>
@@ -452,125 +496,106 @@ function showEventModal(event) {
     const eventStatus = getEventStatus(event);
     const isClosed = eventStatus === 'cerrada';
 
-    // Convert Drive URL if needed
-    const imageUrl = convertDriveUrl(event.imagen) || 'https://via.placeholder.com/600x300/E81C25/ffffff?text=Evento';
+    // Convert Drive URL to optimized WebP if needed
+    const imageUrl = convertDriveToWebP(event.imagen) || DEFAULT_PLACEHOLDER;
+
+    // Format duration
+    let duracionDisplay = event.duracion || '';
+    if (duracionDisplay && !duracionDisplay.toLowerCase().includes('hora')) {
+        duracionDisplay += ' horas';
+    }
 
     // Build modal HTML
     modalContent.innerHTML = `
-        <div class="modal-event-detail">
-            ${isClosed ? '<div class="modal-closed-banner">CERRADA</div>' : ''}
+        <button class="modal-close" onclick="closeEventModal()"><i class="ph ph-x"></i></button>
+        
+        ${isClosed ? '<div class="modal-closed-banner" style="position:absolute; top:0; left:0; width:100%; background:var(--secondary-dark); color:white; text-align:center; padding:0.5rem; z-index:5;">CERRADA</div>' : ''}
+        
+        <div class="modal-header-image-container">
+            <img src="${imageUrl}" alt="${event.titulo}" class="modal-header-image" 
+                 onerror="this.src='${DEFAULT_PLACEHOLDER}'">
+        </div>
+        
+        <div class="modal-body">
+            ${event.tipo ? `<span class="modal-category">${capitalize(event.tipo)}</span>` : ''}
+            <h2 class="modal-title">${event.titulo}</h2>
             
-            <div class="modal-image-container">
-                <img src="${imageUrl}" alt="${event.titulo}" class="modal-image" 
-                     onerror="this.src='https://via.placeholder.com/600x300/E81C25/ffffff?text=Evento'">
-            </div>
-            
-            <div class="modal-body">
-                <h2 class="modal-title">${event.titulo}</h2>
-                
-                ${event.tipo ? `<span class="modal-badge">${capitalize(event.tipo)}</span>` : ''}
-                
-                ${event.descripcion ? `
-                    <div class="modal-section">
-                        <h3><i class="ph ph-text-align-left"></i> Descripción</h3>
-                        <p>${event.descripcion}</p>
+            <div class="modal-grid">
+                ${event.fecha || event.fecha_fin ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-calendar"></i> Fechas</span>
+                        <div class="modal-value">
+                            ${event.fecha ? `Inicio: ${formatDateDisplay(event.fecha)}` : ''}
+                            ${event.fecha && event.fecha_fin ? '<br>' : ''}
+                            ${event.fecha_fin ? `Fin: ${formatDateDisplay(event.fecha_fin)}` : ''}
+                        </div>
                     </div>
                 ` : ''}
                 
-                <div class="modal-info-grid">
-                    ${event.fecha || event.fecha_fin ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-calendar"></i>
-                            <div>
-                                <strong>Fechas</strong>
-                                <p>
-                                    ${event.fecha ? `Inicio: ${formatDateDisplay(event.fecha)}` : ''}
-                                    ${event.fecha && event.fecha_fin ? '<br>' : ''}
-                                    ${event.fecha_fin ? `Fin: ${formatDateDisplay(event.fecha_fin)}` : ''}
-                                </p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.horario || event.hora ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-clock"></i>
-                            <div>
-                                <strong>Horario</strong>
-                                <p>${event.horario || event.hora}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.modalidad ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-device-mobile"></i>
-                            <div>
-                                <strong>Modalidad</strong>
-                                <p>${capitalize(event.modalidad)}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.dirigido_a ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-users"></i>
-                            <div>
-                                <strong>Público objetivo</strong>
-                                <p>${event.dirigido_a}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.unidad_gestion ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-building"></i>
-                            <div>
-                                <strong>Unidad de gestión</strong>
-                                <p>${event.unidad_gestion}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.tematica ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-tag"></i>
-                            <div>
-                                <strong>Temática</strong>
-                                <p>${event.tematica}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.duracion ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-timer"></i>
-                            <div>
-                                <strong>Duración</strong>
-                                <p>${event.duracion}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${event.cupos ? `
-                        <div class="modal-info-item">
-                            <i class="ph ph-users-three"></i>
-                            <div>
-                                <strong>Cupos</strong>
-                                <p>${event.cupos}</p>
-                            </div>
-                        </div>
-                    ` : ''}
+                ${event.horario || event.hora ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-clock"></i> Horario</span>
+                        <div class="modal-value">${event.horario || event.hora}</div>
+                    </div>
+                ` : ''}
+                
+                ${event.modalidad ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-device-mobile"></i> Modalidad</span>
+                        <div class="modal-value">${capitalize(event.modalidad)}</div>
+                    </div>
+                ` : ''}
+                
+                ${duracionDisplay ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-timer"></i> Duración</span>
+                        <div class="modal-value">${duracionDisplay}</div>
+                    </div>
+                ` : ''}
+                
+                ${event.unidad_gestion || event.area ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-building"></i> Unidad de Gestión</span>
+                        <div class="modal-value">${event.unidad_gestion || event.area}</div>
+                    </div>
+                ` : ''}
+                
+                ${event.tematica ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-tag"></i> Temática</span>
+                        <div class="modal-value">${event.tematica}</div>
+                    </div>
+                ` : ''}
+                
+                ${event.dirigido_a ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-users"></i> Público Objetivo</span>
+                        <div class="modal-value">${event.dirigido_a}</div>
+                    </div>
+                ` : ''}
+                
+                ${event.cupos ? `
+                    <div class="modal-info-item">
+                        <span class="modal-label"><i class="ph ph-users-three"></i> Cupos</span>
+                        <div class="modal-value">${event.cupos}</div>
+                    </div>
+                ` : ''}
+            </div>
+            
+            ${event.descripcion ? `
+                <div class="modal-description">
+                    <h3>Objetivo</h3>
+                    <p>${event.descripcion}</p>
                 </div>
-                
-                ${event.enlace ? `
-                    <div class="modal-actions">
-                        <a href="${event.enlace}" target="_blank" rel="noopener noreferrer" class="modal-btn-primary">
-                            <i class="ph ph-link"></i> Más información
-                        </a>
-                    </div>
-                ` : ''}
-            </div>
+            ` : ''}
+            
+            ${(event.enlace || event.presentacion || event.video) ? `
+                <div class="modal-actions">
+                    ${event.enlace ? `<a href="${event.enlace}" target="_blank" class="modal-cta"><i class="ph ph-link"></i> Ver más</a>` : ''}
+                    ${event.presentacion ? `<a href="${event.presentacion}" target="_blank" class="modal-cta secondary"><i class="ph ph-presentation"></i> Ver Presentación</a>` : ''}
+                    ${event.video ? `<a href="${event.video}" target="_blank" class="modal-cta secondary"><i class="ph ph-video"></i> Ver Video</a>` : ''}
+                </div>
+            ` : ''}
         </div>
     `;
 
@@ -757,13 +782,11 @@ function applyFilters() {
         if (tematicaValue !== 'todos' && normalizeString(event.area) !== normalizeString(tematicaValue)) return false;
         if (unidadValue !== 'todos' && normalizeString(event.dirigido_a) !== normalizeString(unidadValue)) return false;
 
-        // 5. Estado
+        // 5. Estado (usar getEventStatus para consistencia)
         if (estadoValue !== 'todos') {
-            const eventStatus = normalizeStatus(event.estado);
-            if (estadoValue === 'disponible' && eventStatus !== 'disponible') return false;
-            if (estadoValue === 'cerrado' && eventStatus === 'disponible') return false;
-            if (estadoValue === 'cupos_llenos' && event.estado !== 'cupos_llenos') return false;
-            if (estadoValue === 'cancelado' && event.estado !== 'cancelado') return false;
+            const eventStatus = getEventStatus(event);
+            if (estadoValue === 'abierta' && eventStatus !== 'abierta') return false;
+            if (estadoValue === 'cerrada' && eventStatus !== 'cerrada') return false;
         }
 
         return true;
@@ -906,14 +929,13 @@ function createEventCard(event) {
     };
 
     const isHighPriority = event.estado === 'cupos_llenos' || event.estado === 'cancelado';
-    const defaultImage = "https://picsum.photos/seed/agenda-minimax/400/300.jpg";
-    const imageUrl = event.imagen && event.imagen.trim() !== "" ? event.imagen : defaultImage;
+    const imageUrl = convertDriveToWebP(event.imagen) || DEFAULT_PLACEHOLDER;
 
     return `
         <div class="event-card">
             <div class="event-image-container">
                 <img src="${imageUrl}" alt="${event.titulo}" class="event-image" 
-                     onerror="this.onerror=null; this.src='${defaultImage}';">
+                     onerror="this.onerror=null; this.src='${DEFAULT_PLACEHOLDER}';">
             </div>
             <div class="event-content">
                 <span class="event-category ${isHighPriority ? 'high-priority' : ''}">
@@ -939,117 +961,6 @@ function getCTAButtonText(estado) {
     }
 }
 
-// ===== MODAL =====
-function showEventModal(event) {
-    const modalContent = document.getElementById('modalContent');
-    const areaNames = {
-        'gestion_investigacion': 'Gestión de la Investigación',
-        'transferencia_resultados': 'Transferencia de Resultados',
-        'laboratorios': 'Laboratorios',
-        'editorial': 'Programa Editorial',
-        'relaciones_internacionales': 'Relaciones Internacionales',
-        'apropiacion_social': 'Apropiación Social del Conocimiento'
-    };
-
-    const defaultImage = "https://picsum.photos/seed/agenda-minimax/400/300.jpg";
-    const imageUrl = event.imagen && event.imagen.trim() !== "" ? event.imagen : defaultImage;
-
-    modalContent.innerHTML = `
-        <div class="modal-header-image-container" style="position: relative;">
-            <img src="${imageUrl}" alt="${event.titulo}" class="modal-header-image"
-                 onerror="this.onerror=null; this.src='${defaultImage}';">
-            <button class="modal-close" id="closeModalBtn" style="position: absolute; top: 1rem; right: 1rem;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="modal-body">
-            <span class="modal-category">${event.tipo}</span>
-            <h2 class="modal-title">${event.titulo}</h2>
-            
-            <div class="modal-grid">
-                <div class="modal-info-item">
-                    <span class="modal-label">Fecha</span>
-                    <span class="modal-value">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
-                        ${formatEventDate(event.fecha)}
-                    </span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Hora</span>
-                    <span class="modal-value">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                        ${event.hora || 'Por definir'}
-                    </span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Duración</span>
-                    <span class="modal-value">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7 7 7z"/></svg>
-                        ${event.duracion || 'N/A'}
-                    </span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Modalidad</span>
-                    <span class="modal-value">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/></svg>
-                        ${event.modalidad || 'Presencial'}
-                    </span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Área</span>
-                    <span class="modal-value">${areaNames[event.area] || event.area}</span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Dirigido a</span>
-                    <span class="modal-value">${event.dirigido_a}</span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Responsable</span>
-                    <span class="modal-value">${event.responsable || 'Vicerrectoría de Investigaciones'}</span>
-                </div>
-                <div class="modal-info-item">
-                    <span class="modal-label">Estado</span>
-                    <span class="modal-value" style="text-transform: capitalize;">${event.estado || 'Abierta'}</span>
-                </div>
-            </div>
-
-            <div class="modal-description">
-                <h3>Descripción</h3>
-                <p>${event.descripcion}</p>
-            </div>
-
-            <div class="modal-footer">
-                ${event.enlace && event.estado !== 'cancelado' && event.estado !== 'cupos_llenos' ?
-            `<a href="${event.enlace}" target="_blank" class="modal-cta">
-                    ${getCTAButtonText(event.estado)}
-                </a>` :
-            `<button class="modal-cta disabled">${getCTAButtonText(event.estado)}</button>`
-        }
-            </div>
-        </div>
-    `;
-
-    elements.eventModal.style.display = 'flex';
-    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-}
-
-function closeModal() {
-    elements.eventModal.style.display = 'none';
-}
-
-function getStatusText(estado) {
-    switch (estado) {
-        case 'disponible': return 'Inscripciones Abiertas';
-        case 'cerrado': return 'Inscripciones Cerradas';
-        case 'cupos_llenos': return 'Cupos Llenos';
-        case 'cancelado': return 'Cancelado';
-        default: return estado;
-    }
-}
-
 // ===== UI STATE MANAGEMENT =====
 function showLoading() {
     if (elements.loading) elements.loading.style.display = 'block';
@@ -1066,8 +977,6 @@ function hideLoading() {
 function showError() {
     if (elements.loading) elements.loading.style.display = 'none';
     if (elements.error) elements.error.style.display = 'block';
-    if (elements.calendarSection) elements.calendarSection.style.display = 'none';
-    if (elements.eventsSection) elements.eventsSection.style.display = 'none';
 }
 
 function hideError() {
@@ -1080,6 +989,11 @@ function showNoEvents() {
 
 function hideNoEvents() {
     if (elements.noEvents) elements.noEvents.style.display = 'none';
+}
+
+function getViewTitle() {
+    // Return appropriate title based on filters
+    return 'Próximos Eventos';
 }
 
 function formatEventDate(dateStr) {
@@ -1095,11 +1009,3 @@ function formatEventDate(dateStr) {
         return dateStr;
     }
 }
-
-function getViewTitle() {
-    // Simplified version - just return a basic title
-    return 'Eventos Disponibles';
-}
-
-// Initialize on load
-document.addEventListener('DOMContentLoaded', initializeApp);
