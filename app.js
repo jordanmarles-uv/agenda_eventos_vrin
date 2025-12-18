@@ -435,7 +435,7 @@ function initializeCalendar() {
                             </div>
                             <div class="event-thumbnail">
                                 ${isClosed ? '<div class="closed-badge-overlay">CERRADA</div>' : ''}
-                                <img loading=" lazy\ src="${imageUrl}" alt="${event.titulo}" onerror="this.src='${DEFAULT_PLACEHOLDER}'">
+                                <img loading="lazy" src="${imageUrl}" alt="${event.titulo}" onerror="this.src='${DEFAULT_PLACEHOLDER}'">
                             </div>
                             <div class="event-details">
                                 <h3 class="event-card-title">${event.titulo}</h3>
@@ -532,7 +532,7 @@ function showEventModal(event) {
         ${isClosed ? '<div class="modal-closed-banner" style="position:absolute; top:0; left:0; width:100%; background:var(--secondary-dark); color:white; text-align:center; padding:0.5rem; z-index:5;">CERRADA</div>' : ''}
         
         <div class="modal-header-image-container">
-            <img loading=" lazy\ src="${imageUrl}" alt="${event.titulo}" class="modal-header-image" 
+            <img loading="lazy" src="${imageUrl}" alt="${event.titulo}" class="modal-header-image" 
                  onerror="this.src='${DEFAULT_PLACEHOLDER}'">
         </div>
         
@@ -963,7 +963,7 @@ function createEventCard(event) {
     return `
         <div class="event-card">
             <div class="event-image-container">
-                <img loading=" lazy\ src="${imageUrl}" alt="${event.titulo}" class="event-image" 
+                <img loading="lazy" src="${imageUrl}" alt="${event.titulo}" class="event-image" 
                      onerror="this.onerror=null; this.src='${DEFAULT_PLACEHOLDER}';">
             </div>
             <div class="event-content">
