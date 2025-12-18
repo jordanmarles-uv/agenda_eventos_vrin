@@ -740,8 +740,8 @@ function setupEventListeners() {
 
     // Retry & Modal
     if (elements.retryBtn) elements.retryBtn.addEventListener('click', () => { hideError(); initializeApp(); });
-    if (elements.closeModal) elements.closeModal.addEventListener('click', closeModal);
-    if (elements.eventModal) elements.eventModal.addEventListener('click', (e) => { if (e.target === elements.eventModal) closeModal(); });
+    if (elements.closeModal) elements.closeModal.addEventListener('click', closeEventModal);
+    if (elements.eventModal) elements.eventModal.addEventListener('click', (e) => { if (e.target === elements.eventModal) closeEventModal(); });
 }
 
 function clearFilters() {
