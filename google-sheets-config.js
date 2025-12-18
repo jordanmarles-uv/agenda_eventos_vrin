@@ -48,10 +48,65 @@ const SHEETS_CONFIG = {
     }
 };
 
+// ===== CACHE SYSTEM =====
+const CACHE_KEY = 'agenda_events_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+function getCachedData() {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+                console.log('✅ Usando datos en caché');
+                return data;
+            } else {
+                console.log('⏰ Caché expirado');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error leyendo caché:', error);
+    }
+    return null;
+}
+
+function setCachedData(data) {
+    try {
+        const cacheObject = {
+            data: data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+        console.log('💾 Datos guardados en caché');
+    } catch (error) {
+        console.error('❌ Error guardando caché:', error);
+    }
+}
+
+function clearCache() {
+    try {
+        localStorage.removeItem(CACHE_KEY);
+        console.log('🗑️ Caché limpiado');
+    } catch (error) {
+        console.error('❌ Error limpiando caché:', error);
+    }
+}
+
 // Función para cargar desde Google Sheets con manejo de errores y reintentos
 async function loadFromGoogleSheets() {
     const config = SHEETS_CONFIG;
     let lastError = null;
+
+    // Verificar caché primero
+    const cachedData = getCachedData();
+    if (cachedData) {
+        return {
+            success: true,
+            data: cachedData,
+            isSampleData: false,
+            fromCache: true
+        };
+    }
 
     // Verificar API Key
     if (!config.options.apiKey) {
@@ -73,7 +128,7 @@ async function loadFromGoogleSheets() {
             const response = await fetchWithTimeout(url, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
-            }, 10000); // 10 segundos de timeout
+            }, 15000); // 15 segundos de timeout
 
             console.log(`📡 Respuesta HTTP: ${response.status} ${response.statusText}`);
 
@@ -85,9 +140,14 @@ async function loadFromGoogleSheets() {
 
             const data = await response.json();
             console.log('✅ Datos recibidos correctamente');
+            const processedData = processSheetData(data.values);
+
+            // Guardar en caché
+            setCachedData(processedData);
+
             return {
                 success: true,
-                data: processSheetData(data.values),
+                data: processedData,
                 isSampleData: false
             };
 
@@ -117,7 +177,7 @@ async function loadFromGoogleSheets() {
 }
 
 // Función auxiliar para fetch con timeout
-function fetchWithTimeout(url, options = {}, timeout = 10000) {
+function fetchWithTimeout(url, options = {}, timeout = 15000) {
     return Promise.race([
         fetch(url, options),
         new Promise((_, reject) =>

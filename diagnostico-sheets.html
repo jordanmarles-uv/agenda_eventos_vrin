@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Google Sheets Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #E81C25;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        button {
+            background: #E81C25;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #C4161E;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico de Conexión - Google Sheets</h1>
+
+        <button onclick="runDiagnostic()">🔄 Ejecutar Diagnóstico</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const SPREADSHEET_ID = '1B3HoE6B1h20iErFHUrvPzEaXXliq89VXPlTxUB2bBH4';
+        const SHEET_NAME = 'Eventos2025';
+
+        async function runDiagnostic() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="status loading">⏳ Ejecutando diagnóstico...</div>';
+
+            let html = '';
+
+            // 1. Verificar API Key
+            html += '<h2>1️⃣ Verificación de API Key</h2>';
+            const apiKey = window.APP_CONFIG?.GOOGLE_SHEETS_API_KEY;
+            if (apiKey) {
+                html += `<div class="status success">✅ API Key encontrada: ${apiKey.substring(0, 10)}...</div>`;
+            } else {
+                html += '<div class="status error">❌ API Key NO encontrada</div>';
+                resultsDiv.innerHTML = html;
+                return;
+            }
+
+            // 2. Construir URL
+            html += '<h2>2️⃣ URL de Conexión</h2>';
+            const encodedSheetName = encodeURIComponent(SHEET_NAME);
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodedSheetName}?key=${apiKey}`;
+            html += `<div class="status info">📍 URL construida correctamente</div>`;
+            html += `<pre>${url.replace(apiKey, 'API_KEY_HIDDEN')}</pre>`;
+
+            // 3. Test de conectividad
+            html += '<h2>3️⃣ Test de Conectividad</h2>';
+            resultsDiv.innerHTML = html;
+
+            try {
+                const startTime = Date.now();
+                html += '<div class="status loading">⏳ Conectando...</div>';
+                resultsDiv.innerHTML = html;
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                html += `<div class="status success">✅ Respuesta recibida en ${duration}ms</div>`;
+                html += `<div class="status info">📡 Status: ${response.status} ${response.statusText}</div>`;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    html += '<h2>4️⃣ Datos Recibidos</h2>';
+                    html += `<div class="status success">✅ ${data.values?.length || 0} filas recibidas</div>`;
+                    html += '<h3>Primeras 3 filas:</h3>';
+                    html += `<pre>${JSON.stringify(data.values?.slice(0, 3), null, 2)}</pre>`;
+
+                    // Verificar headers
+                    if (data.values && data.values.length > 0) {
+                        html += '<h3>Headers detectados:</h3>';
+                        html += `<pre>${JSON.stringify(data.values[0], null, 2)}</pre>`;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    html += `<div class="status error">❌ Error HTTP: ${response.status}</div>`;
+                    html += `<pre>${errorText}</pre>`;
+                }
+
+            } catch (error) {
+                html += `<div class="status error">❌ Error de conexión: ${error.message}</div>`;
+                html += `<pre>${error.stack}</pre>`;
+
+                // Sugerencias
+                html += '<h2>💡 Posibles Soluciones</h2>';
+                html += '<ul>';
+                html += '<li>Verifica que el Spreadsheet ID sea correcto</li>';
+                html += '<li>Verifica que la hoja "Eventos2025" exista</li>';
+                html += '<li>Verifica que el sheet esté compartido públicamente o con la API key</li>';
+                html += '<li>Verifica tu conexión a internet</li>';
+                html += '<li>Intenta desactivar extensiones del navegador (AdBlock, etc.)</li>';
+                html += '</ul>';
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

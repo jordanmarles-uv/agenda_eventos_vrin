@@ -1,13 +1,15 @@
+// ===== DEBUG MODE =====
+const DEBUG_MODE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const log = DEBUG_MODE ? console.log.bind(console) : () => { };
+const logError = console.error.bind(console); // Errors always logged
+
 // ===== STATE =====
 let eventsData = [];
 let filteredEvents = [];
 let calendarInstance = null;
 let datePickerInstance = null;
-let activePopover = null;
 let currentView = 'calendar';
 let currentDate = new Date();
-let currentMonth = currentDate.getMonth();
-let currentYear = currentDate.getFullYear();
 
 // ===== GOOGLE SHEETS CONFIGURATION =====
 // NOTE: The actual configuration is handled in google-sheets-config.js
@@ -139,7 +141,7 @@ const elements = {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('🚀 DOM cargado, iniciando app...');
+    log('🚀 DOM cargado, iniciando app...');
     try {
         initializeApp();
     } catch (error) {
@@ -149,16 +151,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function initializeApp() {
     try {
-        console.log('📋 Step 1: showLoading');
+        log('📋 Step 1: showLoading');
         showLoading();
 
-        console.log('📋 Step 2: initializeDatePickers');
+        log('📋 Step 2: initializeDatePickers');
         initializeDatePickers();
 
-        console.log('📋 Step 3: initializeCalendar');
+        log('📋 Step 3: initializeCalendar');
         initializeCalendar();
 
-        console.log('📋 Step 4: loadEventsData');
+        log('📋 Step 4: loadEventsData');
         const loadedEvents = await loadEventsData();
 
         // Enrich events with calculated status
@@ -171,32 +173,32 @@ async function initializeApp() {
             };
         });
 
-        console.log('✅ Loaded events:', eventsData.length);
+        log('✅ Loaded events:', eventsData.length);
 
         // Apply initial filter (Estado = Abierta por defecto)
-        console.log('📋 Step 5: Applying initial filter (Abierta only)');
+        log('📋 Step 5: Applying initial filter (Abierta only)');
         filteredEvents = eventsData.filter(event => {
             const status = event._calculatedStatus || 'abierta';
             return status === 'abierta';
         });
-        console.log('✅ Filtered to open events:', filteredEvents.length);
+        log('✅ Filtered to open events:', filteredEvents.length);
 
-        console.log('📋 Step 6: updateCalendarEvents');
+        log('📋 Step 6: updateCalendarEvents');
         updateCalendarEvents();
 
-        console.log('📋 Step 6: renderEventList');
+        log('📋 Step 6: renderEventList');
         renderEventList();
 
-        console.log('📋 Step 7: setupEventListeners');
+        log('📋 Step 7: setupEventListeners');
         setupEventListeners();
 
-        console.log('📋 Step 8: switchView to list');
+        log('📋 Step 8: switchView to list');
         switchView('list');
 
-        console.log('📋 Step 9: hideLoading');
+        log('📋 Step 9: hideLoading');
         hideLoading();
 
-        console.log('✅ App initialized successfully!');
+        log('✅ App initialized successfully!');
     } catch (err) {
         console.error('❌ Error initializing app:', err);
         console.error('Stack:', err.stack);
@@ -208,6 +210,24 @@ async function initializeApp() {
 
 // Default placeholder image as base64 (red background with "Evento" text)
 const DEFAULT_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI0U4MUMyNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FdmVudG88L3RleHQ+PC9zdmc+';
+
+/**
+ * Debounce function to limit how often a function can fire
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Wait time in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 /**
  * Extract Google Drive file ID from various URL formats
@@ -415,7 +435,7 @@ function initializeCalendar() {
                             </div>
                             <div class="event-thumbnail">
                                 ${isClosed ? '<div class="closed-badge-overlay">CERRADA</div>' : ''}
-                                <img src="${imageUrl}" alt="${event.titulo}" onerror="this.src='${DEFAULT_PLACEHOLDER}'">
+                                <img loading=" lazy\ src="${imageUrl}" alt="${event.titulo}" onerror="this.src='${DEFAULT_PLACEHOLDER}'">
                             </div>
                             <div class="event-details">
                                 <h3 class="event-card-title">${event.titulo}</h3>
@@ -512,7 +532,7 @@ function showEventModal(event) {
         ${isClosed ? '<div class="modal-closed-banner" style="position:absolute; top:0; left:0; width:100%; background:var(--secondary-dark); color:white; text-align:center; padding:0.5rem; z-index:5;">CERRADA</div>' : ''}
         
         <div class="modal-header-image-container">
-            <img src="${imageUrl}" alt="${event.titulo}" class="modal-header-image" 
+            <img loading=" lazy\ src="${imageUrl}" alt="${event.titulo}" class="modal-header-image" 
                  onerror="this.src='${DEFAULT_PLACEHOLDER}'">
         </div>
         
@@ -631,7 +651,7 @@ if (elements.eventModal) {
 // ===== DATA LOADING =====
 async function loadEventsData() {
     try {
-        console.log('🔄 Cargando datos desde Google Sheets...');
+        log('🔄 Cargando datos desde Google Sheets...');
 
         // Intentar cargar desde Google Sheets
         const result = await loadFromGoogleSheets();
@@ -639,31 +659,31 @@ async function loadEventsData() {
         // Procesar el resultado
         if (result.success && result.data && result.data.length > 0) {
             eventsData = result.data;
-            console.log('✅ Datos cargados exitosamente desde Google Sheets:', eventsData.length, 'eventos');
-            console.log('📊 Primer evento:', eventsData[0]);
-            console.log('📅 Fechas de eventos:', eventsData.map(e => e.fecha).slice(0, 5));
+            log('✅ Datos cargados exitosamente desde Google Sheets:', eventsData.length, 'eventos');
+            log('📊 Primer evento:', eventsData[0]);
+            log('📅 Fechas de eventos:', eventsData.map(e => e.fecha).slice(0, 5));
 
             // Debug específico para imágenes desde Google Sheets
-            console.log('🔍 DEBUG DE IMÁGENES DESDE GOOGLE SHEETS:');
+            log('🔍 DEBUG DE IMÁGENES DESDE GOOGLE SHEETS:');
             eventsData.forEach((event, index) => {
                 const hasValidImage = event.imagen && event.imagen.trim() !== "";
-                console.log(`🖼️ Evento ${index}: ${event.titulo}`);
-                console.log(`   - Campo imagen: "${event.imagen}"`);
-                console.log(`   - Tipo de dato: ${typeof event.imagen}`);
-                console.log(`   - Es null/undefined: ${event.imagen == null}`);
-                console.log(`   - Está vacío: ${!hasValidImage}`);
-                console.log(`   - Longitud: ${event.imagen ? event.imagen.length : 'N/A'}`);
+                log(`🖼️ Evento ${index}: ${event.titulo}`);
+                log(`   - Campo imagen: "${event.imagen}"`);
+                log(`   - Tipo de dato: ${typeof event.imagen}`);
+                log(`   - Es null/undefined: ${event.imagen == null}`);
+                log(`   - Está vacío: ${!hasValidImage}`);
+                log(`   - Longitud: ${event.imagen ? event.imagen.length : 'N/A'}`);
             });
             return result.data;
         } else {
             console.warn('⚠️ No se encontraron datos en Google Sheets, usando datos de ejemplo');
-            console.log('💡 Asegúrate de que tu Google Sheet tenga datos en las columnas correctas');
-            console.log('ℹ️ Error:', result.error || 'Error desconocido');
+            log('💡 Asegúrate de que tu Google Sheet tenga datos en las columnas correctas');
+            log('ℹ️ Error:', result.error || 'Error desconocido');
             return sampleEvents;
         }
     } catch (error) {
         console.error('❌ Error loading events:', error);
-        console.log('🔄 Cargando datos de ejemplo como respaldo...');
+        log('🔄 Cargando datos de ejemplo como respaldo...');
 
         // Mostrar mensaje de error en la UI
         const errorMsg = `Error al conectar con Google Sheets: ${error.message}`;
@@ -681,16 +701,19 @@ async function loadEventsData() {
 
 // ===== EVENT LISTENERS =====
 function setupEventListeners() {
+    // Create debounced version of applyFilters for better performance
+    const debouncedApplyFilters = debounce(applyFilters, 300);
+
     // View toggle
     if (elements.calendarView) elements.calendarView.addEventListener('click', () => switchView('calendar'));
     if (elements.listView) elements.listView.addEventListener('click', () => switchView('list'));
 
-    // Filter selects - trigger filtering on change
-    if (elements.typeFilter) elements.typeFilter.addEventListener('change', applyFilters);
-    if (elements.modalidadFilter) elements.modalidadFilter.addEventListener('change', applyFilters);
-    if (elements.tematicaFilter) elements.tematicaFilter.addEventListener('change', applyFilters);
-    if (elements.unidadFilter) elements.unidadFilter.addEventListener('change', applyFilters);
-    if (elements.estadoFilter) elements.estadoFilter.addEventListener('change', applyFilters);
+    // Filter selects - trigger filtering on change with debouncing
+    if (elements.typeFilter) elements.typeFilter.addEventListener('change', debouncedApplyFilters);
+    if (elements.modalidadFilter) elements.modalidadFilter.addEventListener('change', debouncedApplyFilters);
+    if (elements.tematicaFilter) elements.tematicaFilter.addEventListener('change', debouncedApplyFilters);
+    if (elements.unidadFilter) elements.unidadFilter.addEventListener('change', debouncedApplyFilters);
+    if (elements.estadoFilter) elements.estadoFilter.addEventListener('change', debouncedApplyFilters);
 
     // Date filter with Flatpickr
     if (elements.dateFilter) {
@@ -737,7 +760,7 @@ function clearFilters() {
 }
 
 function applyFilters() {
-    console.log('🔍 Applying filters...');
+    log('🔍 Applying filters...');
 
     // Get values from select elements
     const typeValue = elements.typeFilter ? elements.typeFilter.value : 'todos';
@@ -849,7 +872,7 @@ function getTypeColor(type) {
 
 // ===== VIEW MANAGEMENT =====
 function switchView(viewName) {
-    console.log('🔄 Switching to view:', viewName);
+    log('🔄 Switching to view:', viewName);
 
     // Update buttons
     if (elements.calendarView) elements.calendarView.classList.toggle('active', viewName === 'calendar');
@@ -866,49 +889,55 @@ function switchView(viewName) {
         if (elements.eventsSection) elements.eventsSection.style.display = 'block';
     }
 
-    console.log('✅ View switched to:', viewName);
+    log('✅ View switched to:', viewName);
 }
 
 function navigateMonth(direction) {
     // This function is no longer needed with FullCalendar
     // FullCalendar handles its own navigation
-    console.log('navigateMonth called but not needed with FullCalendar');
+    log('navigateMonth called but not needed with FullCalendar');
 }
 
 // ===== EVENT LIST RENDERING =====
 function renderEventList() {
-    console.log('🔄 Iniciando renderEventList');
-    console.log('📊 filteredEvents:', filteredEvents.length);
+    log('🔄 Iniciando renderEventList');
+    log('📊 filteredEvents:', filteredEvents.length);
 
     const sortedEvents = filteredEvents;
 
-    console.log('📝 Setting eventsCount');
+    log('📝 Setting eventsCount');
     if (elements.eventsCount) {
         elements.eventsCount.textContent = `${filteredEvents.length} eventos`;
     }
 
-    console.log('📝 Setting eventsTitle');
+    log('📝 Setting eventsTitle');
     if (elements.eventsTitle) {
         elements.eventsTitle.textContent = getViewTitle();
     }
 
     if (sortedEvents.length === 0) {
-        console.log('❌ No events to show');
-        elements.eventsGrid.innerHTML = '';
+        log('❌ No events to show');
+        elements.eventsGrid.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: var(--text-light);">
+                <i class="ph ph-magnifying-glass" style="font-size: 4rem; opacity: 0.3;"></i>
+                <h3 style="margin-top: 1rem; color: var(--secondary-dark);">No se encontraron eventos</h3>
+                <p>Intenta ajustar los filtros para ver más resultados</p>
+            </div>
+        `;
         showNoEvents();
         return;
     }
 
-    console.log('✅ Hiding noEvents');
+    log('✅ Hiding noEvents');
     hideNoEvents();
 
-    console.log('🎨 Creating event cards HTML');
+    log('🎨 Creating event cards HTML');
     const eventsHTML = sortedEvents.map(event => createEventCard(event)).join('');
 
-    console.log('📝 Setting eventsGrid innerHTML');
+    log('📝 Setting eventsGrid innerHTML');
     elements.eventsGrid.innerHTML = eventsHTML;
 
-    console.log('🖱️ Adding click listeners');
+    log('🖱️ Adding click listeners');
     // Add click listeners to event cards
     document.querySelectorAll('.event-card').forEach((card, index) => {
         card.addEventListener('click', () => {
@@ -916,7 +945,7 @@ function renderEventList() {
         });
     });
 
-    console.log('✅ renderEventList completed');
+    log('✅ renderEventList completed');
 }
 
 function createEventCard(event) {
@@ -934,7 +963,7 @@ function createEventCard(event) {
     return `
         <div class="event-card">
             <div class="event-image-container">
-                <img src="${imageUrl}" alt="${event.titulo}" class="event-image" 
+                <img loading=" lazy\ src="${imageUrl}" alt="${event.titulo}" class="event-image" 
                      onerror="this.onerror=null; this.src='${DEFAULT_PLACEHOLDER}';">
             </div>
             <div class="event-content">
