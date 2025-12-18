@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #E81C25;
+        }
+
+        .event {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .event h3 {
+            margin-top: 0;
+        }
+
+        img {
+            max-width: 300px;
+            border: 2px solid #ddd;
+            margin: 10px 0;
+        }
+
+        .url {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 Debug de Imágenes</h1>
+        <div id="results">Cargando...</div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="google-sheets-config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        async function debugImages() {
+            const resultsDiv = document.getElementById('results');
+
+            try {
+                const result = await loadFromGoogleSheets();
+
+                if (result.success && result.data) {
+                    const events = result.data.slice(0, 5); // Primeros 5 eventos
+
+                    let html = `<h2>Primeros ${events.length} eventos</h2>`;
+
+                    events.forEach((event, index) => {
+                        const originalUrl = event.imagen || 'No tiene imagen';
+                        const convertedUrl = convertDriveToWebP(event.imagen);
+
+                        html += `
+                            <div class="event">
+                                <h3>${index + 1}. ${event.titulo}</h3>
+                                
+                                <div class="label">URL Original:</div>
+                                <div class="url">${originalUrl}</div>
+                                
+                                <div class="label">URL Convertida:</div>
+                                <div class="url">${convertedUrl}</div>
+                                
+                                <div class="label">Imagen:</div>
+                                <img src="${convertedUrl}" alt="${event.titulo}" 
+                                     onerror="this.style.border='2px solid red'; this.alt='❌ Error cargando imagen';">
+                            </div>
+                        `;
+                    });
+
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<p style="color: red;">Error: ${result.error}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        debugImages();
+    </script>
+</body>
+
+</html>

@@ -259,8 +259,9 @@ function convertDriveToWebP(url) {
     const driveId = extractDriveId(url);
 
     if (driveId) {
-        // Use direct Google Drive export URL for reliable loading
-        return `https://drive.google.com/uc?export=view&id=${driveId}`;
+        // Use direct Google Drive thumbnail API for faster loading
+        // This returns the image directly without external services
+        return `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
     }
 
     // If not a Drive URL, return as-is
