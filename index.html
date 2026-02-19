@@ -121,17 +121,19 @@
                     <label for="tematicaFilter" class="filter-label">Temática</label>
                     <select id="tematicaFilter" class="filter-select">
                         <option value="todos">Todas</option>
-                        <option value="etica_integridad">Ética e Integridad</option>
-                        <option value="gestion_proyectos">Gestión de Proyectos</option>
-                        <option value="transferencia_pi">Transferencia y Propiedad Intelectual</option>
-                        <option value="emprendimiento_tech">Emprendimiento Tecnológico</option>
-                        <option value="libros_autores">Libros y Autores</option>
-                        <option value="escritura_cientifica">Escritura Científica</option>
-                        <option value="becas_movilidad">Becas y Movilidad</option>
-                        <option value="cooperacion_global">Cooperación Global</option>
-                        <option value="innovacion_educativa">Innovación Educativa</option>
-                        <option value="gestion_laboratorios">Gestión y Calidad de Laboratorios</option>
-                        <option value="apropiacion_social_tematica">Apropiación Social</option>
+                        <option>Ética e Integridad</option>
+                        <option>Gestión de Proyectos</option>
+                        <option>Visibilidad e Impacto de la Investigación</option>
+                        <option>Transferencia & Propiedad Intelectual</option>
+                        <option>Emprendimiento Tecnológico</option>
+                        <option>Libros y Autores</option>
+                        <option>Cooperación Global</option>
+                        <option>Gestión y Calidad de Laboratorios</option>
+                        <option>Apropiación Social del conocimiento</option>
+                        <option>Permisos Ambientales</option>
+                        <option>Ciencia Abierta</option>
+                        <option>Manuales de Procedimiento</option>
+                        <option>Ferias y conversatorios</option>
                     </select>
                 </div>
 
@@ -177,7 +179,7 @@
         <!-- Error Message -->
         <div id="error" class="error" style="display: none;">
             <h3>Error al cargar los datos</h3>
-            <p>No se pudieron cargar los eventos. Verifica la conexión a Google Sheets.</p>
+            <p>No se pudieron cargar los eventos. Verifica la conexión.</p>
             <button id="retryBtn" class="retry-btn">Intentar de nuevo</button>
         </div>
 
@@ -187,6 +189,11 @@
             <p>No hay eventos que coincidan con los filtros seleccionados.</p>
         </div>
     </main>
+
+    <footer style="text-align:center;padding:0.75rem;font-size:0.75rem;color:#aaa;">
+        <a href="admin.html" style="color:#aaa;text-decoration:none;" title="Panel de administración">⚙
+            Administración</a>
+    </footer>
 
     <!-- Event Detail Modal -->
     <div id="eventModal" class="modal" style="display: none;">
@@ -203,12 +210,15 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="google-sheets-config.js"></script>
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
-    <script src="debug.js"></script>
-    <script src="app.js?v=999"></script>
+    <script src="app.js?v=1000"></script>
 </body>
 
 </html>

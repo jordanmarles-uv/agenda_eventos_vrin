@@ -537,83 +537,107 @@ function showEventModal(event) {
         </div>
         
         <div class="modal-body">
-            ${event.tipo ? `<span class="modal-category">${capitalize(event.tipo)}</span>` : ''}
-            <h2 class="modal-title">${event.titulo}</h2>
+            <div class="modal-info-header">
+                ${event.tipo ? `<span class="modal-category">${capitalize(event.tipo)}</span>` : ''}
+                <h2 class="modal-title">${event.titulo}</h2>
+                
+                ${event.descripcion ? `
+                    <div class="modal-description-quick">
+                        <p>${event.descripcion}</p>
+                    </div>
+                ` : ''}
+            </div>
             
-            <div class="modal-grid">
+            <div class="modal-detailed-grid">
                 ${event.fecha || event.fecha_fin ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-calendar"></i> Fechas</span>
-                        <div class="modal-value">
-                            ${event.fecha ? `Inicio: ${formatDateDisplay(event.fecha)}` : ''}
-                            ${event.fecha && event.fecha_fin ? '<br>' : ''}
-                            ${event.fecha_fin ? `Fin: ${formatDateDisplay(event.fecha_fin)}` : ''}
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-calendar-blank"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Fecha</span>
+                            <span class="detail-text">
+                                ${event.fecha ? formatDateDisplay(event.fecha) : ''}
+                                ${event.fecha && event.fecha_fin && event.fecha !== event.fecha_fin ? ` al ${formatDateDisplay(event.fecha_fin)}` : ''}
+                            </span>
                         </div>
                     </div>
                 ` : ''}
                 
                 ${event.horario || event.hora ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-clock"></i> Horario</span>
-                        <div class="modal-value">${event.horario || event.hora}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-clock"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Horario</span>
+                            <span class="detail-text">${event.horario || event.hora}</span>
+                        </div>
                     </div>
                 ` : ''}
                 
                 ${event.modalidad ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-device-mobile"></i> Modalidad</span>
-                        <div class="modal-value">${capitalize(event.modalidad)}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-projector-screen"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Modalidad</span>
+                            <span class="detail-text">${capitalize(event.modalidad)}</span>
+                        </div>
                     </div>
                 ` : ''}
                 
                 ${duracionDisplay ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-timer"></i> Duración</span>
-                        <div class="modal-value">${duracionDisplay}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-timer"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Duración</span>
+                            <span class="detail-text">${duracionDisplay}</span>
+                        </div>
                     </div>
                 ` : ''}
                 
                 ${event.unidad_gestion || event.area ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-building"></i> Unidad de Gestión</span>
-                        <div class="modal-value">${event.unidad_gestion || event.area}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-buildings"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Unidad encargada</span>
+                            <span class="detail-text">${event.unidad_gestion || event.area}</span>
+                        </div>
                     </div>
                 ` : ''}
                 
                 ${event.tematica ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-tag"></i> Temática</span>
-                        <div class="modal-value">${event.tematica}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-tag"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Temática</span>
+                            <span class="detail-text">${event.tematica}</span>
+                        </div>
                     </div>
                 ` : ''}
                 
                 ${event.dirigido_a ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-users"></i> Público Objetivo</span>
-                        <div class="modal-value">${event.dirigido_a}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-users-three"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Para</span>
+                            <span class="detail-text">${event.dirigido_a}</span>
+                        </div>
                     </div>
                 ` : ''}
                 
                 ${event.cupos ? `
-                    <div class="modal-info-item">
-                        <span class="modal-label"><i class="ph ph-users-three"></i> Cupos</span>
-                        <div class="modal-value">${event.cupos}</div>
+                    <div class="modal-detail-box">
+                        <div class="detail-icon"><i class="ph ph-user-focus"></i></div>
+                        <div class="detail-info">
+                            <span class="detail-label">Cupos</span>
+                            <span class="detail-text">${event.cupos}</span>
+                        </div>
                     </div>
                 ` : ''}
             </div>
             
-            ${event.descripcion ? `
-                <div class="modal-description">
-                    <h3>Objetivo</h3>
-                    <p>${event.descripcion}</p>
-                </div>
-            ` : ''}
-            
             ${(event.enlace || event.presentacion || event.video) ? `
-                <div class="modal-actions">
-                    ${event.enlace ? `<a href="${event.enlace}" target="_blank" class="modal-cta"><i class="ph ph-link"></i> Ver más</a>` : ''}
-                    ${event.presentacion ? `<a href="${event.presentacion}" target="_blank" class="modal-cta secondary"><i class="ph ph-presentation"></i> Ver Presentación</a>` : ''}
-                    ${event.video ? `<a href="${event.video}" target="_blank" class="modal-cta secondary"><i class="ph ph-video"></i> Ver Video</a>` : ''}
+                <div class="modal-footer-actions">
+                    ${event.enlace ? `<a href="${event.enlace}" target="_blank" class="action-btn primary"><i class="ph ph-arrow-square-out"></i> Inscripción / Más info</a>` : ''}
+                    ${event.presentacion ? `<a href="${event.presentacion}" target="_blank" class="action-btn secondary"><i class="ph ph-presentation-chart"></i> Ver Material</a>` : ''}
+                    ${event.video ? `<a href="${event.video}" target="_blank" class="action-btn secondary"><i class="ph ph-monitor-play"></i> Ver Grabación</a>` : ''}
                 </div>
             ` : ''}
         </div>
@@ -648,49 +672,44 @@ if (elements.eventModal) {
     });
 }
 
-// ===== DATA LOADING =====
+// ===== DATA LOADING — Firestore =====
 async function loadEventsData() {
     try {
-        log('🔄 Cargando datos desde Google Sheets...');
+        log('🔄 Cargando eventos desde Firestore...');
 
-        // Intentar cargar desde Google Sheets
-        const result = await loadFromGoogleSheets();
-
-        // Procesar el resultado
-        if (result.success && result.data && result.data.length > 0) {
-            eventsData = result.data;
-            log('✅ Datos cargados exitosamente desde Google Sheets:', eventsData.length, 'eventos');
-            log('📊 Primer evento:', eventsData[0]);
-            log('📅 Fechas de eventos:', eventsData.map(e => e.fecha).slice(0, 5));
-
-            // Debug específico para imágenes desde Google Sheets
-            log('🔍 DEBUG DE IMÁGENES DESDE GOOGLE SHEETS:');
-            eventsData.forEach((event, index) => {
-                const hasValidImage = event.imagen && event.imagen.trim() !== "";
-                log(`🖼️ Evento ${index}: ${event.titulo}`);
-                log(`   - Campo imagen: "${event.imagen}"`);
-                log(`   - Tipo de dato: ${typeof event.imagen}`);
-                log(`   - Es null/undefined: ${event.imagen == null}`);
-                log(`   - Está vacío: ${!hasValidImage}`);
-                log(`   - Longitud: ${event.imagen ? event.imagen.length : 'N/A'}`);
-            });
-            return result.data;
-        } else {
-            console.warn('⚠️ No se encontraron datos en Google Sheets, usando datos de ejemplo');
-            log('💡 Asegúrate de que tu Google Sheet tenga datos en las columnas correctas');
-            log('ℹ️ Error:', result.error || 'Error desconocido');
+        // Check if Firestore is available
+        if (typeof db === 'undefined') {
+            console.warn('⚠️ Firestore no disponible, usando datos de ejemplo');
             return sampleEvents;
         }
+
+        const snapshot = await db.collection('eventos')
+            .orderBy('fecha_creacion', 'desc')
+            .get();
+
+        if (snapshot.empty) {
+            log('⚠️ No hay eventos en Firestore todavía.');
+            return [];
+        }
+
+        const events = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                // Compatibilidad: mapear fechas.inicio/fin → fecha/fecha_fin
+                // para que filtros, calendario y modal funcionen sin cambios
+                fecha: data.fechas?.inicio || '',
+                fecha_fin: data.fechas?.fin || data.fechas?.inicio || ''
+            };
+        });
+
+        log('✅ Eventos cargados desde Firestore:', events.length);
+        return events;
+
     } catch (error) {
-        console.error('❌ Error loading events:', error);
-        log('🔄 Cargando datos de ejemplo como respaldo...');
-
-        // Mostrar mensaje de error en la UI
-        const errorMsg = `Error al conectar con Google Sheets: ${error.message}`;
-        console.error('Error detallado:', error);
-        console.error('Stack trace:', error.stack);
-
-        // En caso de error, usar datos de ejemplo
+        console.error('❌ Error cargando desde Firestore:', error);
+        console.warn('⚠️ Usando datos de ejemplo como respaldo');
         return sampleEvents;
     }
 }

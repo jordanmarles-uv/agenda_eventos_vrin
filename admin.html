@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin — Agenda VRIN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body class="admin-body">
+
+    <!-- ===== AUTH CONTAINER ===== -->
+    <div id="auth-container">
+
+        <!-- Login -->
+        <div id="login-view" class="auth-card">
+            <div class="auth-logo">
+                <img src="logo_viceinvestigaciones.png" alt="Logo VRIN">
+                <h1>Agenda VRIN</h1>
+                <p>Panel de Administración</p>
+            </div>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label>Correo institucional</label>
+                    <input type="email" id="login-email" placeholder="usuario@correounivalle.edu.co" required
+                        autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <div class="input-icon-wrapper">
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                        <button type="button" class="toggle-pwd" onclick="togglePwd('login-password',this)"><i
+                                class="ph ph-eye"></i></button>
+                    </div>
+                </div>
+                <div id="login-error" class="alert-error" style="display:none"></div>
+                <button type="submit" class="btn-primary full-width" id="login-btn">
+                    <i class="ph ph-sign-in"></i> Iniciar sesión
+                </button>
+            </form>
+            <div class="auth-footer">
+                ¿No tienes acceso? <a href="#" onclick="switchAuth('register')">Solicitar acceso</a>
+            </div>
+        </div>
+
+        <!-- Register -->
+        <div id="register-view" class="auth-card" style="display:none">
+            <div class="auth-logo">
+                <img src="logo_viceinvestigaciones.png" alt="Logo VRIN">
+                <h1>Solicitar acceso</h1>
+                <p>Solo correos <strong>@correounivalle.edu.co</strong></p>
+            </div>
+            <form id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label>Nombre completo</label>
+                    <input type="text" id="reg-nombre" placeholder="Tu nombre completo" required>
+                </div>
+                <div class="form-group">
+                    <label>Correo institucional</label>
+                    <input type="email" id="reg-email" placeholder="usuario@correounivalle.edu.co" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <div class="input-icon-wrapper">
+                        <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required
+                            minlength="6">
+                        <button type="button" class="toggle-pwd" onclick="togglePwd('reg-password',this)"><i
+                                class="ph ph-eye"></i></button>
+                    </div>
+                </div>
+                <div id="register-error" class="alert-error" style="display:none"></div>
+                <button type="submit" class="btn-primary full-width" id="register-btn">
+                    <i class="ph ph-paper-plane-right"></i> Enviar solicitud
+                </button>
+            </form>
+            <div class="auth-footer">
+                <a href="#" onclick="switchAuth('login')">← Volver al inicio de sesión</a>
+            </div>
+        </div>
+
+        <!-- Pending -->
+        <div id="pending-view" class="auth-card status-card" style="display:none">
+            <div class="status-icon pending"><i class="ph ph-clock"></i></div>
+            <h2>Solicitud pendiente</h2>
+            <p>Tu cuenta está a la espera de aprobación del administrador. Vuelve a intentarlo más tarde.</p>
+            <button class="btn-secondary" onclick="doLogout()"><i class="ph ph-sign-out"></i> Cerrar sesión</button>
+        </div>
+
+        <!-- Blocked -->
+        <div id="blocked-view" class="auth-card status-card" style="display:none">
+            <div class="status-icon blocked"><i class="ph ph-prohibit"></i></div>
+            <h2>Acceso denegado</h2>
+            <p>Tu solicitud fue rechazada. Contacta al administrador para más información.</p>
+            <button class="btn-secondary" onclick="doLogout()"><i class="ph ph-sign-out"></i> Cerrar sesión</button>
+        </div>
+
+    </div><!-- /auth-container -->
+
+
+    <!-- ===== DASHBOARD APP ===== -->
+    <div id="app-container" style="display:none">
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <img src="logo_viceinvestigaciones.png" alt="VRIN">
+                <span>Agenda VRIN</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard" onclick="showView('dashboard');return false;">
+                    <i class="ph ph-squares-four"></i><span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="events" onclick="showView('events');return false;">
+                    <i class="ph ph-calendar-dots"></i><span>Eventos</span>
+                </a>
+                <a href="#" class="nav-item superadmin-only" data-view="users" id="nav-users" style="display:none"
+                    onclick="showView('users');return false;">
+                    <i class="ph ph-users"></i><span>Usuarios</span>
+                    <span id="pending-badge" class="nav-badge" style="display:none">0</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-chip">
+                    <div class="user-avatar" id="sidebar-avatar">?</div>
+                    <div class="user-meta">
+                        <span id="sidebar-name">...</span>
+                        <span id="sidebar-role" class="role-tag">Editor</span>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="doLogout()" title="Cerrar sesión"><i
+                        class="ph ph-sign-out"></i></button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main id="main-content">
+
+            <!-- Topbar -->
+            <header class="topbar">
+                <button class="icon-btn" onclick="toggleSidebar()" title="Menú"><i class="ph ph-list"></i></button>
+                <h2 id="page-title">Dashboard</h2>
+                <a href="index.html" target="_blank" class="btn-outline-sm"><i class="ph ph-arrow-square-out"></i> Ver
+                    agenda</a>
+            </header>
+
+            <!-- === DASHBOARD === -->
+            <section id="dashboard-view" class="view-section">
+                <div class="stats-grid">
+                    <div class="stat-card accent-green">
+                        <i class="ph ph-calendar-check stat-icon"></i>
+                        <div><span class="stat-num" id="stat-abiertos">—</span><span class="stat-lbl">Eventos
+                                abiertos</span></div>
+                    </div>
+                    <div class="stat-card accent-red">
+                        <i class="ph ph-calendar-x stat-icon"></i>
+                        <div><span class="stat-num" id="stat-cerrados">—</span><span class="stat-lbl">Eventos
+                                cerrados</span></div>
+                    </div>
+                    <div class="stat-card accent-blue">
+                        <i class="ph ph-stack stat-icon"></i>
+                        <div><span class="stat-num" id="stat-total">—</span><span class="stat-lbl">Total eventos</span>
+                        </div>
+                    </div>
+                    <div class="stat-card accent-orange superadmin-only" id="stat-card-pendientes" style="display:none">
+                        <i class="ph ph-user-plus stat-icon"></i>
+                        <div><span class="stat-num" id="stat-pendientes">—</span><span class="stat-lbl">Usuarios
+                                pendientes</span></div>
+                    </div>
+                </div>
+                <div class="dash-grid">
+                    <div class="dash-card">
+                        <div class="dash-card-header">
+                            <h3>Últimos eventos</h3>
+                            <button class="btn-primary btn-sm" onclick="openEventForm()"><i class="ph ph-plus"></i>
+                                Nuevo</button>
+                        </div>
+                        <div id="recent-events-list">
+                            <p class="empty-text">Cargando...</p>
+                        </div>
+                    </div>
+                    <div class="dash-card superadmin-only" id="dash-pending-users" style="display:none">
+                        <div class="dash-card-header">
+                            <h3>Solicitudes pendientes</h3>
+                            <button class="btn-outline btn-sm" onclick="showView('users')">Ver todas</button>
+                        </div>
+                        <div id="pending-users-list">
+                            <p class="empty-text">Cargando...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- === EVENTS LIST === -->
+            <section id="events-view" class="view-section" style="display:none">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="events-search" placeholder="Buscar evento..." oninput="filterTable()">
+                    </div>
+                    <button class="btn-primary" onclick="openEventForm()"><i class="ph ph-plus"></i> Nuevo
+                        evento</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table" id="events-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Fechas</th>
+                                <th>Autor</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-tbody">
+                            <tr>
+                                <td colspan="6" class="loading-td">Cargando eventos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- === EVENT FORM === -->
+            <section id="event-form-view" class="view-section" style="display:none">
+                <div class="view-header">
+                    <button class="btn-back" onclick="showView('events')"><i class="ph ph-arrow-left"></i>
+                        Volver</button>
+                    <h3 id="form-view-title">Nuevo evento</h3>
+                </div>
+                <form id="event-form" class="event-form" onsubmit="saveEvent(event)">
+                    <input type="hidden" id="event-id">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tipo de actividad *</label>
+                            <select id="f-tipo" required>
+                                <option value="">Seleccionar...</option>
+                                <option>Curso</option>
+                                <option>Taller</option>
+                                <option>Conferencia</option>
+                                <option>Diplomado</option>
+                                <option>Socialización</option>
+                                <option>Seminario</option>
+                                <option>Workshop</option>
+                                <option>Webinar</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Estado *</label>
+                            <select id="f-estado" required>
+                                <option value="ABIERTO">Abierto</option>
+                                <option value="CERRADO">Cerrado</option>
+                            </select>
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Título de la actividad *</label>
+                            <input type="text" id="f-titulo" placeholder="Nombre del evento" required>
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Propósito / Descripción *</label>
+                            <textarea id="f-descripcion" rows="4" placeholder="Objetivo del evento..."
+                                required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Modalidad *</label>
+                            <select id="f-modalidad" required>
+                                <option value="">Seleccionar...</option>
+                                <option>Virtual</option>
+                                <option>Presencial</option>
+                                <option>Híbrido</option>
+                                <option>Autogestionable</option>
+                                <option>Asincrónico</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidad de gestión *</label>
+                            <select id="f-unidad" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="coordinacion_administrativa">Coordinación Administrativa</option>
+                                <option value="relaciones_internacionales">Dirección de Relaciones Internacionales
+                                </option>
+                                <option value="area_proyectos">Área de proyectos</option>
+                                <option value="programa_editorial">Programa Editorial</option>
+                                <option value="laboratorios">Laboratorios (SIIL)</option>
+                                <option value="transferencia">Oficina de Transferencia</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Temática *</label>
+                            <select id="f-tematica" required>
+                                <option value="">Seleccionar...</option>
+                                <option>Ética e Integridad</option>
+                                <option>Gestión de Proyectos</option>
+                                <option>Visibilidad e Impacto de la Investigación</option>
+                                <option>Transferencia & Propiedad Intelectual</option>
+                                <option>Emprendimiento Tecnológico</option>
+                                <option>Libros y Autores</option>
+                                <option>Cooperación Global</option>
+                                <option>Gestión y Calidad de Laboratorios</option>
+                                <option>Apropiación Social del conocimiento</option>
+                                <option>Permisos Ambientales</option>
+                                <option>Ciencia Abierta</option>
+                                <option>Manuales de Procedimiento</option>
+                                <option>Ferias y conversatorios</option>
+                            </select>
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Público objetivo *</label>
+                            <div class="checkbox-group" id="f-dirigido-group">
+                                <label class="checkbox-item"><input type="checkbox" name="dirigido" value="Docentes">
+                                    Docentes</label>
+                                <label class="checkbox-item"><input type="checkbox" name="dirigido" value="Estudiantes">
+                                    Estudiantes</label>
+                                <label class="checkbox-item"><input type="checkbox" name="dirigido" value="Externos">
+                                    Externos</label>
+                                <label class="checkbox-item"><input type="checkbox" name="dirigido"
+                                        value="Administrativos"> Administrativos</label>
+                                <label class="checkbox-item"><input type="checkbox" name="dirigido"
+                                        value="Investigadores"> Investigadores</label>
+                            </div>
+                            <input type="hidden" id="f-dirigido">
+                        </div>
+                        <div class="form-group">
+                            <label>Rango de fechas (Inicio → Fin)</label>
+                            <input type="text" id="f-fechas-display" placeholder="Seleccionar rango..." readonly
+                                class="date-input">
+                            <input type="hidden" id="f-fecha-inicio">
+                            <input type="hidden" id="f-fecha-fin">
+                        </div>
+                        <div class="form-group">
+                            <label>Mes (Automático)</label>
+                            <input type="text" id="f-mes" placeholder="Se calcula por la fecha" readonly
+                                class="readonly-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Horario (Inicio - Fin)</label>
+                            <div class="time-range-group">
+                                <input type="text" id="f-hora-inicio" placeholder="08:00" class="time-picker">
+                                <span>a</span>
+                                <input type="text" id="f-hora-fin" placeholder="10:00" class="time-picker">
+                            </div>
+                            <input type="hidden" id="f-horario">
+                        </div>
+                        <div class="form-group">
+                            <label>Cantidad de horas</label>
+                            <input type="text" id="f-duracion" placeholder="Ej: 2">
+                        </div>
+                        <div class="form-group">
+                            <label>Cupos</label>
+                            <input type="text" id="f-cupos" placeholder="Ej: 30  o  Ilimitado">
+                        </div>
+                        <div class="form-group">
+                            <label>Expositor(a)</label>
+                            <input type="text" id="f-expositor" placeholder="Nombre del expositor">
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Link de inscripción / información</label>
+                            <input type="url" id="f-enlace" placeholder="https://...">
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Contacto / Más información</label>
+                            <input type="text" id="f-masinfo"
+                                placeholder="correo@correounivalle.edu.co o texto adicional">
+                        </div>
+                        <div class="form-group">
+                            <label>Link Presentación</label>
+                            <input type="url" id="f-presentacion" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label>Link Video</label>
+                            <input type="url" id="f-video" placeholder="https://...">
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="form-group span-2">
+                            <label>Imagen del evento</label>
+                            <div class="image-upload-zone" id="upload-zone"
+                                onclick="document.getElementById('f-imagen-file').click()">
+                                <img id="img-preview" src="" alt="" style="display:none">
+                                <div id="upload-placeholder" class="upload-placeholder">
+                                    <i class="ph ph-image-square"></i>
+                                    <p>Haz clic para subir imagen</p>
+                                    <span>PNG, JPG, WebP · Máx 2 MB</span>
+                                </div>
+                            </div>
+                            <input type="file" id="f-imagen-file" accept="image/*" style="display:none"
+                                onchange="previewImage(this)">
+                            <input type="hidden" id="f-imagen-url">
+                            <p class="hint" id="img-current-hint" style="display:none"><i class="ph ph-link"></i> Ya
+                                tiene imagen guardada. Sube una nueva para reemplazarla.</p>
+                        </div>
+                    </div>
+
+                    <div id="form-error" class="alert-error" style="display:none"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="showView('events')">Cancelar</button>
+                        <button type="submit" class="btn-primary" id="save-btn"><i class="ph ph-floppy-disk"></i>
+                            Guardar evento</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- === USERS (superadmin) === -->
+            <section id="users-view" class="view-section" style="display:none">
+                <div class="tabs-bar">
+                    <button class="tab-btn active" onclick="showUsersTab('pendientes',this)">
+                        Pendientes <span id="badge-pend" class="tab-badge">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showUsersTab('editores',this)">Editores</button>
+                    <button class="tab-btn" onclick="showUsersTab('bloqueados',this)">Bloqueados</button>
+                </div>
+                <div id="tab-pendientes">
+                    <div id="list-pendientes" class="users-list">Cargando...</div>
+                </div>
+                <div id="tab-editores" style="display:none">
+                    <div id="list-editores" class="users-list">Cargando...</div>
+                </div>
+                <div id="tab-bloqueados" style="display:none">
+                    <div id="list-bloqueados" class="users-list">Cargando...</div>
+                </div>
+            </section>
+
+        </main>
+    </div><!-- /app-container -->
+
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>
