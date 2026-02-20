@@ -66,10 +66,12 @@ function togglePwd(inputId, btn) {
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
+    const overlay = $('sidebar-overlay');
     const main = $('main-content');
     if (!sidebar) return;
     if (window.innerWidth <= 768) {
         sidebar.classList.toggle('open');
+        if (overlay) overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
     } else {
         sidebar.classList.toggle('collapsed');
         if (main) main.classList.toggle('full');
@@ -190,6 +192,14 @@ function showView(viewName) {
         const el = $(`${v}-view`);
         if (el) el.style.display = 'none';
     });
+
+    // Close sidebar on mobile after clicking
+    const sidebar = $('sidebar');
+    const overlay = $('sidebar-overlay');
+    if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.style.display = 'none';
+    }
 
     const target = $(`${viewName}-view`);
     if (target) target.style.display = 'block';

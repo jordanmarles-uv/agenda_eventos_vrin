@@ -327,9 +327,39 @@ function formatDateDisplay(dateStr) {
  * @param {Object} event - Event object
  * @returns {string} 'abierta' or 'cerrada'
  */
+/**
+ * Formats a key or label (e.g., area_proyectos -> Area Proyectos)
+ * @param {string} str - String to format
+ * @returns {string} Formatted string
+ */
+function formatLabel(str) {
+    if (!str) return '';
+    return str.split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
+/**
+ * Get event status from sheet data
+ * Normalizes estado field to 'abierta' or 'cerrada'
+ * @param {Object} event - Event object
+ * @returns {string} 'abierta' or 'cerrada'
+ */
 function getEventStatus(event) {
-    // Si no tiene estado, se considera CERRADA
-    if (!event.estado || event.estado.trim() === '') return 'cerrada';
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    // Si tiene una fecha de fin, comparar con hoy
+    if (event.fecha_fin) {
+        const endDate = new Date(event.fecha_fin + 'T23:59:59');
+        if (now > endDate) return 'cerrada';
+    } else if (event.fecha) {
+        const startDate = new Date(event.fecha + 'T23:59:59');
+        if (now > startDate) return 'cerrada';
+    }
+
+    // Si no tiene estado, se considera ABIERTA (por defecto si no ha pasado la fecha)
+    if (!event.estado || event.estado.trim() === '') return 'abierta';
 
     const estado = event.estado.toLowerCase().trim();
 
@@ -338,8 +368,8 @@ function getEventStatus(event) {
     if (estado.includes('abierta') || estado.includes('disponible') || estado.includes('abierto')) return 'abierta';
     if (estado.includes('cupos') || estado.includes('lleno') || estado.includes('cancelad')) return 'cerrada';
 
-    // Default: si no tiene estado claro, se considera CERRADA
-    return 'cerrada';
+    // Default: si no ha pasado la fecha y no tiene estado claro, se considera ABIERTA
+    return 'abierta';
 }
 
 function initializeDatePickers() {
@@ -440,8 +470,8 @@ function initializeCalendar() {
                             <div class="event-details">
                                 <h3 class="event-card-title">${event.titulo}</h3>
                                 <div class="event-meta">
-                                    <span class="event-type">${capitalize(event.tipo || 'Evento')}</span>
-                                    ${event.modalidad ? `<span class="event-mode">• ${capitalize(event.modalidad)}</span>` : ''}
+                                    <span class="event-type">${formatLabel(event.tipo || 'Evento')}</span>
+                                    ${event.modalidad ? `<span class="event-mode">• ${formatLabel(event.modalidad)}</span>` : ''}
                                 </div>
                                 ${event.dirigido_a ? `<div class="event-audience"><i class="ph ph-users"></i> ${event.dirigido_a}</div>` : ''}
                                 ${event.fecha || event.fecha_fin ? `
@@ -577,7 +607,7 @@ function showEventModal(event) {
                         <div class="detail-icon"><i class="ph ph-projector-screen"></i></div>
                         <div class="detail-info">
                             <span class="detail-label">Modalidad</span>
-                            <span class="detail-text">${capitalize(event.modalidad)}</span>
+                            <span class="detail-text">${formatLabel(event.modalidad)}</span>
                         </div>
                     </div>
                 ` : ''}
@@ -597,7 +627,7 @@ function showEventModal(event) {
                         <div class="detail-icon"><i class="ph ph-buildings"></i></div>
                         <div class="detail-info">
                             <span class="detail-label">Unidad encargada</span>
-                            <span class="detail-text">${event.unidad_gestion || event.area}</span>
+                            <span class="detail-text">${formatLabel(event.unidad_gestion || event.area)}</span>
                         </div>
                     </div>
                 ` : ''}
@@ -755,6 +785,25 @@ function setupEventListeners() {
         });
     }
 
+    // Connect Pills to Selects
+    document.querySelectorAll('.pill-group').forEach(group => {
+        const selectId = group.id.replace('Pills', 'Filter'); // e.g., modalidadPills -> modalidadFilter
+        const select = document.getElementById(selectId);
+        if (select) {
+            group.querySelectorAll('.pill').forEach(pill => {
+                pill.addEventListener('click', () => {
+                    // Update active state in pills
+                    group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+
+                    // Update select value and trigger change event
+                    select.value = pill.dataset.value;
+                    select.dispatchEvent(new Event('change'));
+                });
+            });
+        }
+    });
+
     // Clear Filters
     if (elements.clearFiltersBtn) elements.clearFiltersBtn.addEventListener('click', clearFilters);
 
@@ -771,6 +820,13 @@ function clearFilters() {
     if (elements.estadoFilter) elements.estadoFilter.value = 'todos';
     if (elements.tematicaFilter) elements.tematicaFilter.value = 'todos';
     if (elements.unidadFilter) elements.unidadFilter.value = 'todos';
+
+    // Reset all pills to 'todos'
+    document.querySelectorAll('.pill-group').forEach(group => {
+        group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        const todoPill = group.querySelector('.pill[data-value="todos"]');
+        if (todoPill) todoPill.classList.add('active');
+    });
 
     // Clear date picker
     if (datePickerInstance) datePickerInstance.clear();

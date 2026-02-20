@@ -7,7 +7,7 @@
     <meta name="description"
         content="Agenda de eventos de formación, talleres y diplomados de la Vicerrectoría de Investigaciones">
     <meta name="keywords" content="investigación, talleres, cursos, diplomados, eventos académicos">
-    <meta name="theme-color" content="#E81C25">
+    <meta name="theme-color" content="#C20E1A">
 
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="Agenda de Eventos - Vicerrectoría de Investigaciones">
@@ -15,12 +15,14 @@
     <meta property="og:type" content="website">
 
     <title>Agenda de Eventos - Vicerrectoría de Investigaciones</title>
-    <link rel="stylesheet" href="styles.css?v=999">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+
+    <link rel="stylesheet" href="styles.css?v=1001">
     <link rel="stylesheet" href="calendar-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
@@ -102,17 +104,17 @@
                     </select>
                 </div>
 
-                <!-- Unidad de Gestión Filter (renamed from Dirigido a) -->
+                <!-- Unidad de Gestión Filter -->
                 <div class="filter-group">
                     <label for="unidadFilter" class="filter-label">Unidad de Gestión</label>
                     <select id="unidadFilter" class="filter-select">
                         <option value="todos">Todas</option>
-                        <option value="coordinacion_administrativa">Coordinación Administrativa</option>
-                        <option value="relaciones_internacionales">Dirección de Relaciones Internacionales</option>
-                        <option value="area_proyectos">Área de proyectos</option>
-                        <option value="programa_editorial">Programa Editorial</option>
-                        <option value="laboratorios">Sistema Institucional Integrado de Laboratorios</option>
-                        <option value="transferencia">Oficina de Transferencia de Resultados de Investigación</option>
+                        <option value="coordinacion_administrativa">Administrativa</option>
+                        <option value="relaciones_internacionales">Internacionales</option>
+                        <option value="area_proyectos">Proyectos</option>
+                        <option value="programa_editorial">Editorial</option>
+                        <option value="laboratorios">Laboratorios</option>
+                        <option value="transferencia">OTRI</option>
                     </select>
                 </div>
 
@@ -134,6 +136,7 @@
                         <option>Ciencia Abierta</option>
                         <option>Manuales de Procedimiento</option>
                         <option>Ferias y conversatorios</option>
+                        <option>Internacionalización en casa</option>
                     </select>
                 </div>
 
@@ -170,10 +173,32 @@
             </div>
         </section>
 
-        <!-- Loading -->
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Cargando eventos...</p>
+        <!-- Loading Skeletons -->
+        <div id="loading" class="events-grid" style="display: none; padding-top: 2rem;">
+            <!-- Skeleton Card 1 -->
+            <div class="skeleton-card">
+                <div class="skeleton-img"></div>
+                <div class="skeleton-text title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-text short"></div>
+                <div class="skeleton-footer"></div>
+            </div>
+            <!-- Skeleton Card 2 -->
+            <div class="skeleton-card hide-mobile">
+                <div class="skeleton-img"></div>
+                <div class="skeleton-text title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-text short"></div>
+                <div class="skeleton-footer"></div>
+            </div>
+            <!-- Skeleton Card 3 -->
+            <div class="skeleton-card hide-mobile">
+                <div class="skeleton-img"></div>
+                <div class="skeleton-text title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-text short"></div>
+                <div class="skeleton-footer"></div>
+            </div>
         </div>
 
         <!-- Error Message -->
@@ -190,9 +215,49 @@
         </div>
     </main>
 
-    <footer style="text-align:center;padding:0.75rem;font-size:0.75rem;color:#aaa;">
-        <a href="admin.html" style="color:#aaa;text-decoration:none;" title="Panel de administración">⚙
-            Administración</a>
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-info">
+                <h3>Vicerrectoría de Investigaciones</h3>
+                <p>Universidad del Valle</p>
+                <p>Cali, Colombia</p>
+            </div>
+
+            <div class="footer-links">
+                <h4>Enlaces de Interés</h4>
+                <ul>
+                    <li><a href="https://viceinvestigaciones.univalle.edu.co/" target="_blank">Sitio Web Oficial <i
+                                class="ph ph-arrow-up-right"></i></a></li>
+                    <li><a href="admin.html">Administración de Agenda <i class="ph ph-lock-key"></i></a></li>
+                </ul>
+            </div>
+
+            <div class="footer-social">
+                <h4>Conecta con nosotros</h4>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/vice.investigaciones/" target="_blank" aria-label="Facebook">
+                        <i class="ph ph-facebook-logo"></i>
+                    </a>
+                    <a href="https://www.instagram.com/vicerrectoriainvestigacionesuv/" target="_blank"
+                        aria-label="Instagram">
+                        <i class="ph ph-instagram-logo"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/vicerrector%C3%ADa-de-investigaciones-univalle/"
+                        target="_blank" aria-label="LinkedIn">
+                        <i class="ph ph-linkedin-logo"></i>
+                    </a>
+                    <a href="https://www.youtube.com/channel/UCZLgGJtWhurg_NxHbiMw0gg" target="_blank"
+                        aria-label="YouTube">
+                        <i class="ph ph-youtube-logo"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="currentYear"></span> Universidad del Valle. Agenda desarrollada para la Vicerrectoría de
+                Investigaciones.</p>
+        </div>
     </footer>
 
     <!-- Event Detail Modal -->
