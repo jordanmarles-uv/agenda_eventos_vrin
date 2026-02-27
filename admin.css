@@ -1203,3 +1203,341 @@ body.admin-body {
     cursor: not-allowed;
     font-weight: 500;
 }
+
+/* ===== FORM NOTE (required fields) ===== */
+.form-note {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.req-star {
+    color: #DC2626;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.field-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* ===== AUTO BADGE (mes, duracion) ===== */
+.auto-field-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.auto-label {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 0.25rem;
+}
+
+.auto-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.9rem;
+    background: rgba(194, 14, 26, 0.05);
+    border: 1.5px solid rgba(194, 14, 26, 0.18);
+    border-radius: 8px;
+    min-height: 42px;
+}
+
+.auto-icon {
+    font-size: 1.1rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.auto-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+}
+
+/* ===== NEW EVENT BUTTON (prominent CTA) ===== */
+.btn-new-event {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, #841F1C 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(194, 14, 26, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-new-event::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-new-event:hover::before {
+    left: 100%;
+}
+
+.btn-new-event:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(194, 14, 26, 0.4);
+}
+
+.btn-new-event:active {
+    transform: translateY(0);
+}
+
+.btn-new-event .ph-plus-circle {
+    font-size: 1.3rem;
+}
+
+.cta-arrow {
+    margin-left: auto;
+    opacity: 0.7;
+    transition: transform 0.3s ease;
+}
+
+.btn-new-event:hover .cta-arrow {
+    transform: translateX(4px);
+    opacity: 1;
+}
+
+.dash-cta {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Events toolbar new button */
+.btn-new-event-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    background: linear-gradient(135deg, var(--primary) 0%, #841F1C 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(194, 14, 26, 0.25);
+}
+
+.btn-new-event-toolbar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(194, 14, 26, 0.35);
+}
+
+/* ===== DASHBOARD EVENTS CARD ===== */
+.dash-events-card {
+    grid-column: 1 / -1;
+}
+
+.recent-event-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--bg);
+}
+
+.recent-event-card:hover {
+    background: white;
+    border-color: var(--primary);
+    transform: translateX(3px);
+    box-shadow: var(--shadow);
+}
+
+.recent-event-thumb {
+    width: 64px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #e2e8f0;
+}
+
+.recent-event-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.recent-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #C20E1A, #5A0008);
+    color: white;
+    font-size: 1.25rem;
+}
+
+.recent-event-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.recent-event-meta {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.1rem;
+}
+
+.recent-event-badges {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.recent-arrow {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.recent-event-card:hover .recent-arrow {
+    transform: translateX(3px);
+    color: var(--primary);
+}
+
+/* ===== FASE DE GESTIÓN BADGES ===== */
+.badge-fase {
+    display: inline-block;
+    padding: 0.18rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge-fase-publicado {
+    background: #DCFCE7;
+    color: #166534;
+    padding: 0.18rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-fase-archivado {
+    background: #F1F5F9;
+    color: #475569;
+    padding: 0.18rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-fase-estructura {
+    background: #FEF9C3;
+    color: #854D0E;
+    padding: 0.18rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* ===== ROLE BADGES for user management ===== */
+.rol-tag-inline {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 50px;
+    margin-top: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.rol-superadmin {
+    background: rgba(194, 14, 26, 0.1);
+    color: var(--primary);
+}
+
+.rol-publicador {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1D4ED8;
+}
+
+.rol-editor {
+    background: rgba(16, 185, 129, 0.1);
+    color: #065F46;
+}
+
+/* Role selector in user mgmt */
+.sel-rol {
+    padding: 0.35rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.sel-rol:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.btn-save-rol {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-save-rol:hover {
+    opacity: 0.85;
+}

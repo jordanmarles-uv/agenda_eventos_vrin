@@ -6,6 +6,7 @@
 let currentUser = null;
 let currentUserData = null;
 let isSuperAdmin = false;
+let currentRole = 'editor'; // 'superadmin' | 'editor' | 'publicador'
 let eventsCache = [];
 let calendarInstance = null;
 let datePicker = null;
@@ -46,14 +47,6 @@ function formatDateDisplay(dateStr) {
     if (!y || !m || !d) return dateStr;
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
-}
-
-function parseDateDMY(str) {
-    // Convert DD/MM/YYYY to YYYY-MM-DD
-    if (!str) return '';
-    const parts = str.split('/');
-    if (parts.length !== 3) return str;
-    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 }
 
 function togglePwd(inputId, btn) {
@@ -107,22 +100,21 @@ auth.onAuthStateChanged(async (user) => {
 
     currentUser = user;
 
-    // Check Firestore user doc
     try {
         const doc = await db.collection('usuarios').doc(user.uid).get();
 
         if (!doc.exists) {
-            // New user — create pending record
             const isSA = user.email === SUPERADMIN_EMAIL;
             await db.collection('usuarios').doc(user.uid).set({
                 nombre: user.displayName || user.email.split('@')[0],
                 email: user.email,
-                estado: isSA ? 'editor' : 'pendiente',
+                estado: isSA ? 'aprobado' : 'pendiente',
+                rol: isSA ? 'superadmin' : 'editor',
                 es_superadmin: isSA,
                 fecha_registro: firebase.firestore.FieldValue.serverTimestamp()
             });
             if (isSA) {
-                currentUserData = { estado: 'editor', es_superadmin: true };
+                currentUserData = { estado: 'aprobado', rol: 'superadmin', es_superadmin: true };
                 bootDashboard(user);
             } else {
                 showAppOrAuth('auth');
@@ -132,7 +124,8 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         currentUserData = doc.data();
-        isSuperAdmin = (user.email === SUPERADMIN_EMAIL);
+        isSuperAdmin = (user.email === SUPERADMIN_EMAIL) || currentUserData.rol === 'superadmin';
+        currentRole = isSuperAdmin ? 'superadmin' : (currentUserData.rol || 'editor');
 
         if (currentUserData.estado === 'bloqueado') {
             await auth.signOut();
@@ -147,7 +140,6 @@ auth.onAuthStateChanged(async (user) => {
             return;
         }
 
-        // editor or superadmin
         bootDashboard(user);
 
     } catch (err) {
@@ -163,11 +155,13 @@ auth.onAuthStateChanged(async (user) => {
 function bootDashboard(user) {
     showAppOrAuth('app');
 
-    // Sidebar user info
     const initials = (currentUserData.nombre || user.email).charAt(0).toUpperCase();
     $('sidebar-avatar').textContent = initials;
     $('sidebar-name').textContent = currentUserData.nombre || user.email.split('@')[0];
-    $('sidebar-role').textContent = isSuperAdmin ? '⭐ Superadmin' : 'Editor';
+
+    // Role label display
+    const roleLabels = { superadmin: '⭐ Superadmin', publicador: '📢 Publicador', editor: '✏️ Editor' };
+    $('sidebar-role').textContent = roleLabels[currentRole] || capitalize(currentRole);
 
     // Show superadmin-only elements
     if (isSuperAdmin) {
@@ -193,7 +187,6 @@ function showView(viewName) {
         if (el) el.style.display = 'none';
     });
 
-    // Close sidebar on mobile after clicking
     const sidebar = $('sidebar');
     const overlay = $('sidebar-overlay');
     if (sidebar && sidebar.classList.contains('open')) {
@@ -204,16 +197,13 @@ function showView(viewName) {
     const target = $(`${viewName}-view`);
     if (target) target.style.display = 'block';
 
-    // Update active nav
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.view === viewName);
     });
 
-    // Page titles
     const titles = { dashboard: 'Dashboard', events: 'Eventos', 'event-form': 'Evento', users: 'Usuarios' };
     $('page-title').textContent = titles[viewName] || viewName;
 
-    // Load data per view
     if (viewName === 'events') loadEventsTable();
     if (viewName === 'users' && isSuperAdmin) loadUsersAll();
 }
@@ -234,12 +224,12 @@ function initDatePicker() {
             if (selectedDates.length >= 1) {
                 start = flatpickr.formatDate(selectedDates[0], 'Y-m-d');
                 $('f-fecha-inicio').value = start;
-                $('f-mes').value = calculateMonthsInRange(start, start);
+                updateMesBadge(start, start);
             }
             if (selectedDates.length >= 2) {
                 end = flatpickr.formatDate(selectedDates[1], 'Y-m-d');
                 $('f-fecha-fin').value = end;
-                $('f-mes').value = calculateMonthsInRange(start, end);
+                updateMesBadge(start, end);
             }
         }
     });
@@ -255,7 +245,8 @@ function initTimePickers() {
             noCalendar: true,
             dateFormat: "H:i",
             time_24hr: true,
-            locale: 'es'
+            locale: 'es',
+            onChange: calcDuracion
         });
     }
 
@@ -265,9 +256,35 @@ function initTimePickers() {
             noCalendar: true,
             dateFormat: "H:i",
             time_24hr: true,
-            locale: 'es'
+            locale: 'es',
+            onChange: calcDuracion
         });
     }
+}
+
+function calcDuracion() {
+    const hIni = $('f-hora-inicio')?.value;
+    const hFin = $('f-hora-fin')?.value;
+    const badge = $('duracion-badge');
+    if (!badge) return;
+    if (hIni && hFin) {
+        const [hh1, mm1] = hIni.split(':').map(Number);
+        const [hh2, mm2] = hFin.split(':').map(Number);
+        const totalMin = (hh2 * 60 + mm2) - (hh1 * 60 + mm1);
+        if (totalMin > 0) {
+            const hrs = Math.floor(totalMin / 60);
+            const min = totalMin % 60;
+            badge.textContent = min > 0 ? `${hrs}h ${min}min` : `${hrs}h`;
+            return;
+        }
+    }
+    badge.textContent = '—';
+}
+
+function updateMesBadge(start, end) {
+    const badge = $('mes-badge');
+    if (!badge) return;
+    badge.textContent = calculateMonthsInRange(start, end) || '—';
 }
 
 function calculateMonthsInRange(start, end) {
@@ -276,7 +293,8 @@ function calculateMonthsInRange(start, end) {
     const dateEnd = end ? new Date(end + 'T00:00:00') : dateStart;
 
     const months = [];
-    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
     let current = new Date(dateStart.getFullYear(), dateStart.getMonth(), 1);
     const last = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), 1);
@@ -321,7 +339,7 @@ async function loadRecentEvents() {
     try {
         const snap = await db.collection('eventos')
             .orderBy('fecha_creacion', 'desc')
-            .limit(5)
+            .limit(8)
             .get();
 
         if (snap.empty) {
@@ -332,19 +350,49 @@ async function loadRecentEvents() {
         let html = '';
         snap.forEach(doc => {
             const e = doc.data();
-            const badge = (e.estado || '').toLowerCase().includes('abierto')
+            const id = doc.id;
+            const isAbierto = (e.estado || '').toLowerCase().includes('abierto');
+            const badge = isAbierto
                 ? '<span class="badge-abierto">Abierto</span>'
                 : '<span class="badge-cerrado">Cerrado</span>';
+            const fase = e.fase_gestion ? `<span class="badge-fase">${e.fase_gestion}</span>` : '';
+            const inicio = e.fechas?.inicio ? formatDateDisplay(e.fechas.inicio) : '—';
+            const imgUrl = e.imagen || '';
+            const thumb = imgUrl
+                ? `<img src="${imgUrl}" alt="" class="recent-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="recent-thumb-placeholder" style="display:none"><i class="ph ph-calendar-blank"></i></div>`
+                : `<div class="recent-thumb-placeholder"><i class="ph ph-calendar-blank"></i></div>`;
+
             html += `
-                <div class="recent-item">
-                    <div class="recent-item-title">${e.titulo || 'Sin título'}</div>
-                    <span class="recent-item-meta">${capitalize(e.tipo || '')}</span>
-                    ${badge}
+                <div class="recent-event-card" onclick="editEventFromDash('${id}')">
+                    <div class="recent-event-thumb">${thumb}</div>
+                    <div class="recent-event-info">
+                        <div class="recent-item-title">${e.titulo || 'Sin título'}</div>
+                        <div class="recent-event-meta">
+                            <span class="recent-item-meta">${capitalize(e.tipo || '')}</span>
+                            <span class="recent-item-meta">· ${inicio}</span>
+                        </div>
+                        <div class="recent-event-badges">${badge}${fase}</div>
+                    </div>
+                    <i class="ph ph-caret-right recent-arrow"></i>
                 </div>`;
         });
         setHtml('recent-events-list', html);
     } catch (err) {
         setHtml('recent-events-list', '<p class="empty-text">Error cargando eventos.</p>');
+    }
+}
+
+function editEventFromDash(id) {
+    // Load events cache if needed, then edit
+    if (!eventsCache.length) {
+        loadEventsTable().then(() => {
+            const eventData = eventsCache.find(e => e.id === id);
+            if (eventData) openEventForm(eventData);
+        });
+    } else {
+        const eventData = eventsCache.find(e => e.id === id);
+        if (eventData) openEventForm(eventData);
+        else { showView('events'); }
     }
 }
 
@@ -376,7 +424,7 @@ async function loadPendingUsersDash() {
 let allEventsRows = [];
 
 async function loadEventsTable() {
-    setHtml('events-tbody', '<tr><td colspan="6" class="loading-td">Cargando...</td></tr>');
+    setHtml('events-tbody', '<tr><td colspan="7" class="loading-td">Cargando...</td></tr>');
     try {
         let query = db.collection('eventos').orderBy('fecha_creacion', 'desc');
         if (!isSuperAdmin) {
@@ -387,13 +435,13 @@ async function loadEventsTable() {
         snap.forEach(doc => eventsCache.push({ id: doc.id, ...doc.data() }));
         renderEventsTable(eventsCache);
     } catch (err) {
-        setHtml('events-tbody', `<tr><td colspan="6" class="loading-td">Error: ${err.message}</td></tr>`);
+        setHtml('events-tbody', `<tr><td colspan="7" class="loading-td">Error: ${err.message}</td></tr>`);
     }
 }
 
 function renderEventsTable(events) {
     if (!events.length) {
-        setHtml('events-tbody', '<tr><td colspan="6" class="loading-td">No hay eventos.</td></tr>');
+        setHtml('events-tbody', '<tr><td colspan="7" class="loading-td">No hay eventos.</td></tr>');
         return;
     }
     const rows = events.map(e => {
@@ -403,18 +451,26 @@ function renderEventsTable(events) {
         const inicio = e.fechas?.inicio ? formatDateDisplay(e.fechas.inicio) : '—';
         const fin = e.fechas?.fin ? formatDateDisplay(e.fechas.fin) : '—';
         const canEdit = isSuperAdmin || e.creado_por === currentUser?.uid;
+        const fase = e.fase_gestion || '—';
+        const faseBadgeClass = {
+            'Publicado': 'badge-fase-publicado',
+            'Archivado': 'badge-fase-archivado',
+            'Estructuración': 'badge-fase-estructura'
+        }[e.fase_gestion] || 'badge-fase-estructura';
+
         return `
             <tr>
                 <td><strong>${e.titulo || 'Sin título'}</strong></td>
                 <td>${capitalize(e.tipo || '—')}</td>
                 <td>${estado}</td>
+                <td><span class="${faseBadgeClass}">${fase}</span></td>
                 <td style="font-size:0.8rem">${inicio} → ${fin}</td>
                 <td style="font-size:0.8rem;color:var(--text-muted)">${e.email_creador || '—'}</td>
                 <td>
                     ${canEdit ? `
                         <button class="btn-edit" onclick="editEvent('${e.id}')" title="Editar"><i class="ph ph-pencil"></i></button>
                         <button class="btn-delete" onclick="deleteEvent('${e.id}','${(e.titulo || '').replace(/'/g, "\\'")}');" title="Eliminar"><i class="ph ph-trash"></i></button>
-                    ` : '—'}
+                    ` : '<span style="color:var(--text-muted);font-size:0.8rem">—</span>'}
                 </td>
             </tr>`;
     });
@@ -452,6 +508,12 @@ function openEventForm(eventData = null) {
     $('f-fecha-inicio').value = '';
     $('f-fecha-fin').value = '';
 
+    // Reset auto-badges
+    const mesBadge = $('mes-badge');
+    if (mesBadge) mesBadge.textContent = '—';
+    const durBadge = $('duracion-badge');
+    if (durBadge) durBadge.textContent = '—';
+
     // Fill form if editing
     if (eventData) {
         $('f-tipo').value = eventData.tipo || '';
@@ -462,7 +524,6 @@ function openEventForm(eventData = null) {
         $('f-unidad').value = eventData.unidad_gestion || '';
         $('f-tematica').value = eventData.tematica || '';
         $('f-dirigido').value = eventData.dirigido_a || '';
-        $('f-mes').value = eventData.mes || '';
         $('f-horario').value = eventData.horario || '';
         $('f-duracion').value = eventData.duracion || '';
         $('f-cupos').value = eventData.cupos || '';
@@ -471,6 +532,11 @@ function openEventForm(eventData = null) {
         $('f-masinfo').value = eventData.mas_info || '';
         $('f-presentacion').value = eventData.presentacion || '';
         $('f-video').value = eventData.video || '';
+        if ($('f-fase')) $('f-fase').value = eventData.fase_gestion || 'Estructuración';
+
+        // Auto badges
+        if (mesBadge) mesBadge.textContent = eventData.mes || '—';
+        if (durBadge) durBadge.textContent = eventData.duracion || '—';
 
         // Horario split
         if (eventData.horario && eventData.horario.includes(' - ')) {
@@ -494,6 +560,7 @@ function openEventForm(eventData = null) {
             if (datePicker) {
                 datePicker.setDate([eventData.fechas.inicio, eventData.fechas.fin || eventData.fechas.inicio]);
             }
+            updateMesBadge(eventData.fechas.inicio, eventData.fechas.fin);
         }
 
         // Image
@@ -533,7 +600,15 @@ async function saveEvent(e) {
     showFormError('form-error', '');
 
     try {
-        // Upload image if new file selected
+        // Permission check (only superadmin can edit others' events)
+        if (editingEventId) {
+            const existing = eventsCache.find(ev => ev.id === editingEventId);
+            if (existing && !isSuperAdmin && existing.creado_por !== currentUser.uid) {
+                showFormError('form-error', 'No tienes permiso para editar este evento.');
+                return;
+            }
+        }
+
         let imageUrl = $('f-imagen-url').value || '';
         const fileInput = $('f-imagen-file');
         if (fileInput.files.length > 0) {
@@ -543,6 +618,20 @@ async function saveEvent(e) {
         const fechaInicio = $('f-fecha-inicio').value;
         const fechaFin = $('f-fecha-fin').value;
 
+        // Collect dirigido checkboxes
+        const selectedDirigido = Array.from(document.querySelectorAll('input[name="dirigido"]:checked'))
+            .map(cb => cb.value)
+            .join(', ');
+
+        // Collect horario from pickers
+        const hIni = $('f-hora-inicio').value;
+        const hFin = $('f-hora-fin').value;
+        const horario = (hIni && hFin) ? `${hIni} - ${hFin}` : ($('f-horario').value.trim());
+
+        // Duracion from badge or field
+        const durBadge = $('duracion-badge');
+        const duracion = (durBadge && durBadge.textContent !== '—') ? durBadge.textContent : $('f-duracion').value.trim();
+
         const eventData = {
             tipo: $('f-tipo').value,
             estado: $('f-estado').value,
@@ -551,44 +640,30 @@ async function saveEvent(e) {
             modalidad: $('f-modalidad').value,
             unidad_gestion: $('f-unidad').value,
             tematica: $('f-tematica').value,
-            dirigido_a: $('f-dirigido').value.trim(),
+            dirigido_a: selectedDirigido,
             fechas: {
                 inicio: fechaInicio,
                 fin: fechaFin || fechaInicio
             },
-            mes: $('f-mes').value.trim(),
-            horario: $('f-horario').value.trim(),
-            duracion: $('f-duracion').value.trim(),
+            mes: ($('mes-badge') ? $('mes-badge').textContent : '') || '',
+            horario: horario,
+            duracion: duracion,
             cupos: $('f-cupos').value.trim(),
             expositor: $('f-expositor').value.trim(),
             enlace: $('f-enlace').value.trim(),
             mas_info: $('f-masinfo').value.trim(),
             presentacion: $('f-presentacion').value.trim(),
             video: $('f-video').value.trim(),
-            imagen: imageUrl
+            imagen: imageUrl,
+            fase_gestion: $('f-fase') ? $('f-fase').value : 'Estructuración'
         };
 
-        // Collect dirigido checkboxes
-        const selectedDirigido = Array.from(document.querySelectorAll('input[name="dirigido"]:checked'))
-            .map(cb => cb.value)
-            .join(', ');
-        eventData.dirigido_a = selectedDirigido;
-
-        // Collect horario from pickers
-        const hIni = $('f-hora-inicio').value;
-        const hFin = $('f-hora-fin').value;
-        if (hIni && hFin) {
-            eventData.horario = `${hIni} - ${hFin}`;
-        }
-
         if (editingEventId) {
-            // Update existing
             await db.collection('eventos').doc(editingEventId).update({
                 ...eventData,
                 fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
             });
         } else {
-            // Create new
             await db.collection('eventos').add({
                 ...eventData,
                 creado_por: currentUser.uid,
@@ -654,54 +729,79 @@ async function uploadImage(file) {
 // =============================================
 async function loadUsersAll() {
     const snap = await db.collection('usuarios').get();
-    const pendientes = [], editores = [], bloqueados = [];
+    const pendientes = [], activos = [], bloqueados = [];
 
     snap.forEach(doc => {
         const u = { id: doc.id, ...doc.data() };
-        if (u.email === SUPERADMIN_EMAIL) return; // skip superadmin
+        if (u.email === SUPERADMIN_EMAIL) return;
+        if (u.rol === 'superadmin') return;
         if (u.estado === 'pendiente') pendientes.push(u);
-        else if (u.estado === 'editor') editores.push(u);
         else if (u.estado === 'bloqueado') bloqueados.push(u);
+        else activos.push(u);
     });
 
     $('badge-pend').textContent = pendientes.length;
 
     renderUserList('list-pendientes', pendientes, 'pendiente');
-    renderUserList('list-editores', editores, 'editor');
+    renderUserList('list-editores', activos, 'activo');
     renderUserList('list-bloqueados', bloqueados, 'bloqueado');
 }
 
-function renderUserList(containerId, users, estado) {
+function renderUserList(containerId, users, grupo) {
     if (!users.length) {
         setHtml(containerId, '<p class="empty-text">No hay usuarios en este estado.</p>');
         return;
     }
-    const html = users.map(u => `
+    const html = users.map(u => {
+        const rolActual = u.rol || 'editor';
+        const rolLabel = { superadmin: 'Superadmin', publicador: 'Publicador', editor: 'Editor' }[rolActual] || rolActual;
+
+        return `
         <div class="user-row">
             <div class="user-avatar">${(u.nombre || u.email).charAt(0).toUpperCase()}</div>
             <div class="user-row-info">
                 <div class="user-row-name">${u.nombre || '—'}</div>
                 <div class="user-row-email">${u.email}</div>
+                <span class="rol-tag-inline rol-${rolActual}">${rolLabel}</span>
             </div>
-            <span class="badge-${estado}">${capitalize(estado)}</span>
             <div class="user-row-actions">
-                ${estado !== 'editor' ? `<button class="btn-approve" onclick="setUserStatus('${u.id}','editor')">Aprobar</button>` : ''}
-                ${estado !== 'bloqueado' ? `<button class="btn-reject"  onclick="setUserStatus('${u.id}','bloqueado')">Rechazar</button>` : ''}
-                ${estado === 'bloqueado' ? `<button class="btn-approve" onclick="setUserStatus('${u.id}','editor')">Restaurar</button>` : ''}
+                ${grupo === 'pendiente' ? `<button class="btn-approve" onclick="setUserStatus('${u.id}','aprobado')"><i class="ph ph-check"></i> Aprobar</button>` : ''}
+                ${grupo === 'activo' ? `
+                    <select class="sel-rol" id="rol-${u.id}">
+                        <option value="editor" ${rolActual === 'editor' ? 'selected' : ''}>Editor</option>
+                        <option value="publicador" ${rolActual === 'publicador' ? 'selected' : ''}>Publicador</option>
+                    </select>
+                    <button class="btn-save-rol" onclick="setUserRole('${u.id}')"><i class="ph ph-floppy-disk"></i></button>
+                ` : ''}
+                ${grupo !== 'bloqueado' ? `<button class="btn-reject" onclick="setUserStatus('${u.id}','bloqueado')"><i class="ph ph-prohibit"></i> Bloquear</button>` : ''}
+                ${grupo === 'bloqueado' ? `<button class="btn-approve" onclick="setUserStatus('${u.id}','aprobado')"><i class="ph ph-arrow-counter-clockwise"></i> Restaurar</button>` : ''}
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
     setHtml(containerId, html);
 }
 
 async function setUserStatus(uid, newStatus) {
     try {
         await db.collection('usuarios').doc(uid).update({ estado: newStatus });
-        // Refresh counts
         loadUsersAll();
         loadDashboardStats();
         loadPendingUsersDash();
     } catch (err) {
         alert('Error: ' + err.message);
+    }
+}
+
+async function setUserRole(uid) {
+    const sel = document.getElementById(`rol-${uid}`);
+    if (!sel) return;
+    const newRole = sel.value;
+    try {
+        await db.collection('usuarios').doc(uid).update({ rol: newRole });
+        const btn = sel.nextElementSibling;
+        if (btn) { btn.innerHTML = '<i class="ph ph-check"></i>'; setTimeout(() => btn.innerHTML = '<i class="ph ph-floppy-disk"></i>', 1500); }
+    } catch (err) {
+        alert('Error al cambiar rol: ' + err.message);
     }
 }
 
@@ -728,7 +828,6 @@ async function doRegister(nombre, email, password) {
         throw new Error(`Solo se permiten correos @${ALLOWED_DOMAIN}`);
     }
     const cred = await auth.createUserWithEmailAndPassword(email, password);
-    // Update display name
     await cred.user.updateProfile({ displayName: nombre });
     return cred;
 }
@@ -764,7 +863,6 @@ $('register-form')?.addEventListener('submit', async (e) => {
         const email = $('reg-email').value.trim();
         const pwd = $('reg-password').value;
         await doRegister(nombre, email, pwd);
-        // onAuthStateChanged will handle showing pending view
     } catch (err) {
         showFormError('register-error', mapAuthError(err.code) || err.message);
         btn.disabled = false;

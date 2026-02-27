@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin — Agenda VRIN</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -179,14 +180,22 @@
                     </div>
                 </div>
                 <div class="dash-grid">
-                    <div class="dash-card">
+                    <div class="dash-card dash-events-card">
                         <div class="dash-card-header">
-                            <h3>Últimos eventos</h3>
-                            <button class="btn-primary btn-sm" onclick="openEventForm()"><i class="ph ph-plus"></i>
-                                Nuevo</button>
+                            <h3><i class="ph ph-calendar-dots"></i> Últimos eventos</h3>
+                            <a href="#" class="btn-outline btn-sm" onclick="showView('events');return false;">Ver
+                                todos</a>
                         </div>
                         <div id="recent-events-list">
                             <p class="empty-text">Cargando...</p>
+                        </div>
+                        <!-- CTA Button prominente -->
+                        <div class="dash-cta">
+                            <button class="btn-new-event" onclick="openEventForm()">
+                                <i class="ph ph-plus-circle"></i>
+                                <span>Crear nuevo evento</span>
+                                <i class="ph ph-arrow-right cta-arrow"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="dash-card superadmin-only" id="dash-pending-users" style="display:none">
@@ -208,8 +217,9 @@
                         <i class="ph ph-magnifying-glass"></i>
                         <input type="text" id="events-search" placeholder="Buscar evento..." oninput="filterTable()">
                     </div>
-                    <button class="btn-primary" onclick="openEventForm()"><i class="ph ph-plus"></i> Nuevo
-                        evento</button>
+                    <button class="btn-new-event-toolbar" onclick="openEventForm()">
+                        <i class="ph ph-plus-circle"></i> Nuevo evento
+                    </button>
                 </div>
                 <div class="table-wrap">
                     <table class="admin-table" id="events-table">
@@ -218,6 +228,7 @@
                                 <th>Título</th>
                                 <th>Tipo</th>
                                 <th>Estado</th>
+                                <th>Fase de gestión</th>
                                 <th>Fechas</th>
                                 <th>Autor</th>
                                 <th>Acciones</th>
@@ -225,7 +236,7 @@
                         </thead>
                         <tbody id="events-tbody">
                             <tr>
-                                <td colspan="6" class="loading-td">Cargando eventos...</td>
+                                <td colspan="7" class="loading-td">Cargando eventos...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -239,12 +250,17 @@
                         Volver</button>
                     <h3 id="form-view-title">Nuevo evento</h3>
                 </div>
+
+                <!-- Nota campos obligatorios -->
+                <p class="form-note"><i class="ph ph-info"></i> Los campos marcados con <span class="req-star">*</span>
+                    son obligatorios.</p>
+
                 <form id="event-form" class="event-form" onsubmit="saveEvent(event)">
                     <input type="hidden" id="event-id">
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Tipo de actividad *</label>
+                            <label>Tipo de actividad <span class="req-star">*</span></label>
                             <select id="f-tipo" required>
                                 <option value="">Seleccionar...</option>
                                 <option>Curso</option>
@@ -258,23 +274,37 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Estado *</label>
+                            <label>Estado <span class="req-star">*</span></label>
                             <select id="f-estado" required>
                                 <option value="ABIERTO">Abierto</option>
                                 <option value="CERRADO">Cerrado</option>
                             </select>
                         </div>
+
+                        <!-- FASE DE GESTIÓN (uso interno, visible para todos los admins) -->
+                        <div class="form-group">
+                            <label>Fase de gestión <i class="ph ph-lock-key"
+                                    title="Uso interno, no visible al público"></i></label>
+                            <select id="f-fase">
+                                <option value="Estructuración">Estructuración</option>
+                                <option value="Publicado">Publicado</option>
+                                <option value="Archivado">Archivado</option>
+                            </select>
+                            <span class="field-hint"><i class="ph ph-eye-slash"></i> Solo admin — solo se muestra al
+                                público si está "Publicado"</span>
+                        </div>
+
                         <div class="form-group span-2">
-                            <label>Título de la actividad *</label>
+                            <label>Título de la actividad <span class="req-star">*</span></label>
                             <input type="text" id="f-titulo" placeholder="Nombre del evento" required>
                         </div>
                         <div class="form-group span-2">
-                            <label>Propósito / Descripción *</label>
+                            <label>Propósito / Descripción <span class="req-star">*</span></label>
                             <textarea id="f-descripcion" rows="4" placeholder="Objetivo del evento..."
                                 required></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Modalidad *</label>
+                            <label>Modalidad <span class="req-star">*</span></label>
                             <select id="f-modalidad" required>
                                 <option value="">Seleccionar...</option>
                                 <option>Virtual</option>
@@ -285,7 +315,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Unidad de gestión *</label>
+                            <label>Unidad de gestión <span class="req-star">*</span></label>
                             <select id="f-unidad" required>
                                 <option value="">Seleccionar...</option>
                                 <option value="coordinacion_administrativa">Coordinación Administrativa</option>
@@ -298,13 +328,13 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Temática *</label>
+                            <label>Temática <span class="req-star">*</span></label>
                             <select id="f-tematica" required>
                                 <option value="">Seleccionar...</option>
                                 <option>Ética e Integridad</option>
                                 <option>Gestión de Proyectos</option>
                                 <option>Visibilidad e Impacto de la Investigación</option>
-                                <option>Transferencia & Propiedad Intelectual</option>
+                                <option>Transferencia &amp; Propiedad Intelectual</option>
                                 <option>Emprendimiento Tecnológico</option>
                                 <option>Libros y Autores</option>
                                 <option>Cooperación Global</option>
@@ -318,7 +348,7 @@
                             </select>
                         </div>
                         <div class="form-group span-2">
-                            <label>Público objetivo *</label>
+                            <label>Público objetivo <span class="req-star">*</span></label>
                             <div class="checkbox-group" id="f-dirigido-group">
                                 <label class="checkbox-item"><input type="checkbox" name="dirigido" value="Docentes">
                                     Docentes</label>
@@ -333,6 +363,8 @@
                             </div>
                             <input type="hidden" id="f-dirigido">
                         </div>
+
+                        <!-- FECHA + MES AUTO en la misma fila -->
                         <div class="form-group">
                             <label>Rango de fechas (Inicio → Fin)</label>
                             <input type="text" id="f-fechas-display" placeholder="Seleccionar rango..." readonly
@@ -340,11 +372,15 @@
                             <input type="hidden" id="f-fecha-inicio">
                             <input type="hidden" id="f-fecha-fin">
                         </div>
-                        <div class="form-group">
-                            <label>Mes (Automático)</label>
-                            <input type="text" id="f-mes" placeholder="Se calcula por la fecha" readonly
-                                class="readonly-input">
+                        <div class="form-group auto-field-group">
+                            <label>Mes <span class="auto-label">(automático)</span></label>
+                            <div class="auto-badge-wrap">
+                                <i class="ph ph-calendar-blank auto-icon"></i>
+                                <span class="auto-badge" id="mes-badge">—</span>
+                            </div>
                         </div>
+
+                        <!-- HORARIO + DURACIÓN AUTO en la misma fila -->
                         <div class="form-group">
                             <label>Horario (Inicio - Fin)</label>
                             <div class="time-range-group">
@@ -354,10 +390,16 @@
                             </div>
                             <input type="hidden" id="f-horario">
                         </div>
-                        <div class="form-group">
-                            <label>Cantidad de horas</label>
-                            <input type="text" id="f-duracion" placeholder="Ej: 2">
+                        <div class="form-group auto-field-group">
+                            <label>Horas <span class="auto-label">(automático)</span></label>
+                            <div class="auto-badge-wrap">
+                                <i class="ph ph-clock auto-icon"></i>
+                                <span class="auto-badge" id="duracion-badge">—</span>
+                            </div>
+                            <!-- Hidden para guardar -->
+                            <input type="hidden" id="f-duracion">
                         </div>
+
                         <div class="form-group">
                             <label>Cupos</label>
                             <input type="text" id="f-cupos" placeholder="Ej: 30  o  Ilimitado">
@@ -393,7 +435,7 @@
                                 <div id="upload-placeholder" class="upload-placeholder">
                                     <i class="ph ph-image-square"></i>
                                     <p>Haz clic para subir imagen</p>
-                                    <span>PNG, JPG, WebP · Máx 2 MB</span>
+                                    <span>PNG, JPG, WebP · Máx 2 MB · Recomendado: 1200×630 px</span>
                                 </div>
                             </div>
                             <input type="file" id="f-imagen-file" accept="image/*" style="display:none"
@@ -419,7 +461,7 @@
                     <button class="tab-btn active" onclick="showUsersTab('pendientes',this)">
                         Pendientes <span id="badge-pend" class="tab-badge">0</span>
                     </button>
-                    <button class="tab-btn" onclick="showUsersTab('editores',this)">Editores</button>
+                    <button class="tab-btn" onclick="showUsersTab('editores',this)">Activos</button>
                     <button class="tab-btn" onclick="showUsersTab('bloqueados',this)">Bloqueados</button>
                 </div>
                 <div id="tab-pendientes">

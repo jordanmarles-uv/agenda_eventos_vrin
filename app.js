@@ -448,12 +448,15 @@ function initializeCalendar() {
                     month = 'Confirmar';
                 }
 
-                // Convert Drive URLs to direct image URLs
-                const imageUrl = convertDriveToWebP(event.imagen) || DEFAULT_PLACEHOLDER;
-
                 // Get event status (auto-calculated if not provided)
                 const eventStatus = getEventStatus(event);
                 const isClosed = eventStatus === 'cerrada';
+
+                // Build thumbnail: use image if available, else no-image banner
+                const rawImg = event.imagen ? convertDriveToWebP(event.imagen) : '';
+                const thumbnailHtml = rawImg
+                    ? `<img loading="lazy" src="${rawImg}" alt="${event.titulo}" onerror="this.parentElement.innerHTML='<div class=event-no-img-thumb><span>${event.titulo}</span></div>'">`
+                    : `<div class="event-no-img-thumb"><span>${event.titulo}</span></div>`;
 
                 return {
                     html: `
@@ -465,7 +468,7 @@ function initializeCalendar() {
                             </div>
                             <div class="event-thumbnail">
                                 ${isClosed ? '<div class="closed-badge-overlay">CERRADA</div>' : ''}
-                                <img loading="lazy" src="${imageUrl}" alt="${event.titulo}" onerror="this.src='${DEFAULT_PLACEHOLDER}'">
+                                ${thumbnailHtml}
                             </div>
                             <div class="event-details">
                                 <h3 class="event-card-title">${event.titulo}</h3>
@@ -476,7 +479,7 @@ function initializeCalendar() {
                                 ${event.dirigido_a ? `<div class="event-audience"><i class="ph ph-users"></i> ${event.dirigido_a}</div>` : ''}
                                 ${event.fecha || event.fecha_fin ? `
                                     <div class="event-dates">
-                                        <i class="ph ph-calendar"></i> 
+                                        <i class="ph ph-calendar"></i>
                                         ${event.fecha ? formatDateDisplay(event.fecha) : ''}
                                         ${event.fecha && event.fecha_fin && event.fecha !== event.fecha_fin ? ` - ${formatDateDisplay(event.fecha_fin)}` : ''}
                                         ${!event.fecha && event.fecha_fin ? formatDateDisplay(event.fecha_fin) : ''}
@@ -546,25 +549,23 @@ function showEventModal(event) {
     const eventStatus = getEventStatus(event);
     const isClosed = eventStatus === 'cerrada';
 
-    // Convert Drive URL to optimized WebP if needed
-    const imageUrl = convertDriveToWebP(event.imagen) || DEFAULT_PLACEHOLDER;
+    // Build image section — styled banner if no image
+    const rawModalImg = event.imagen ? convertDriveToWebP(event.imagen) : '';
+    const modalImageHtml = rawModalImg
+        ? `<div class="modal-header-image-container"><img loading="lazy" src="${rawModalImg}" alt="${event.titulo}" class="modal-header-image" onerror="this.parentElement.innerHTML='<div class=modal-no-image-banner><span>${event.titulo}</span></div>'"></div>`
+        : `<div class="modal-no-image-banner"><span>${event.titulo}</span></div>`;
 
     // Format duration
     let duracionDisplay = event.duracion || '';
-    if (duracionDisplay && !duracionDisplay.toLowerCase().includes('hora')) {
+    if (duracionDisplay && !duracionDisplay.toLowerCase().includes('hora') && !isNaN(parseFloat(duracionDisplay))) {
         duracionDisplay += ' horas';
     }
 
     // Build modal HTML
     modalContent.innerHTML = `
         <button class="modal-close" onclick="closeEventModal()"><i class="ph ph-x"></i></button>
-        
-        ${isClosed ? '<div class="modal-closed-banner" style="position:absolute; top:0; left:0; width:100%; background:var(--secondary-dark); color:white; text-align:center; padding:0.5rem; z-index:5;">CERRADA</div>' : ''}
-        
-        <div class="modal-header-image-container">
-            <img loading="lazy" src="${imageUrl}" alt="${event.titulo}" class="modal-header-image" 
-                 onerror="this.src='${DEFAULT_PLACEHOLDER}'">
-        </div>
+        ${isClosed ? '<div class="modal-closed-banner">INSCRIPCIÓN CERRADA</div>' : ''}
+        ${modalImageHtml}
         
         <div class="modal-body">
             <div class="modal-info-header">
@@ -707,7 +708,6 @@ async function loadEventsData() {
     try {
         log('🔄 Cargando eventos desde Firestore...');
 
-        // Check if Firestore is available
         if (typeof db === 'undefined') {
             console.warn('⚠️ Firestore no disponible, usando datos de ejemplo');
             return sampleEvents;
@@ -722,19 +722,23 @@ async function loadEventsData() {
             return [];
         }
 
-        const events = snapshot.docs.map(doc => {
+        const events = [];
+        snapshot.docs.forEach(doc => {
             const data = doc.data();
-            return {
+            // ===== FILTRO FASE DE GESTIÓN =====
+            // Solo mostrar eventos Publicados (o sin fase = legacy/compatibilidad)
+            const fase = data.fase_gestion || '';
+            if (fase && fase !== 'Publicado') return; // skip no-publicados
+
+            events.push({
                 id: doc.id,
                 ...data,
-                // Compatibilidad: mapear fechas.inicio/fin → fecha/fecha_fin
-                // para que filtros, calendario y modal funcionen sin cambios
                 fecha: data.fechas?.inicio || '',
                 fecha_fin: data.fechas?.fin || data.fechas?.inicio || ''
-            };
+            });
         });
 
-        log('✅ Eventos cargados desde Firestore:', events.length);
+        log('✅ Eventos públicos cargados desde Firestore:', events.length);
         return events;
 
     } catch (error) {
