@@ -881,8 +881,13 @@ function applyFilters() {
         }
 
         // 4. More Filters (Temática y Unidad)
-        if (tematicaValue !== 'todos' && normalizeString(event.area) !== normalizeString(tematicaValue)) return false;
-        if (unidadValue !== 'todos' && normalizeString(event.dirigido_a) !== normalizeString(unidadValue)) return false;
+        if (tematicaValue !== 'todos' && normalizeString(event.tematica) !== normalizeString(tematicaValue)) return false;
+
+        if (unidadValue !== 'todos') {
+            const strUnidad = normalizeString(event.unidad_gestion).replace(/\s+/g, '_');
+            const strArea = normalizeString(event.area).replace(/\s+/g, '_');
+            if (!strUnidad.includes(unidadValue) && !strArea.includes(unidadValue)) return false;
+        }
 
         // 5. Estado (usar getEventStatus para consistencia)
         if (estadoValue !== 'todos') {
