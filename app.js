@@ -11,9 +11,8 @@ let datePickerInstance = null;
 let currentView = 'calendar';
 let currentDate = new Date();
 
-// ===== GOOGLE SHEETS CONFIGURATION =====
-// NOTE: The actual configuration is handled in google-sheets-config.js
-// This file (app.js) uses the functions exported by that file.
+// ===== DATA CONFIGURATION =====
+// Configuración principal desde Firestore.
 
 // Sample data for testing (remove when connecting to real Google Sheets)
 const sampleEvents = [
@@ -748,9 +747,7 @@ async function loadEventsData() {
     }
 }
 
-// ===== GOOGLE SHEETS INTEGRATION =====
-// Las funciones de conectividad con Google Sheets están en google-sheets-config.js
-// que se carga automáticamente antes que este archivo
+
 
 // ===== EVENT LISTENERS =====
 function setupEventListeners() {
