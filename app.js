@@ -10,6 +10,8 @@ let calendarInstance = null;
 let datePickerInstance = null;
 let currentView = 'calendar';
 let currentDate = new Date();
+let eventsPerPage = 6;
+let currentEventPage = 1;
 
 // ===== DATA CONFIGURATION =====
 // Configuración principal desde Firestore.
@@ -494,8 +496,12 @@ function initializeCalendar() {
                 };
             }
 
-            // Default rendering for month view
-            return { html: arg.event.title };
+            // Month view rendering
+            const titleHtml = `<div class="fc-custom-title" title="${arg.event.title}">${arg.event.title}</div>`;
+            const timeInfo = event.horario || event.hora;
+            const timeHtml = timeInfo ? `<div class="fc-custom-time"><i class="ph ph-clock"></i> ${timeInfo}</div>` : '';
+            
+            return { html: `<div class="fc-custom-event-content">${titleHtml}${timeHtml}</div>` };
         },
 
         // Event interaction
@@ -754,6 +760,21 @@ function setupEventListeners() {
     // Create debounced version of applyFilters for better performance
     const debouncedApplyFilters = debounce(applyFilters, 300);
 
+    // Search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debouncedApplyFilters);
+    }
+
+    // Load More Button
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => {
+            currentEventPage++;
+            renderEventList();
+        });
+    }
+
     // View toggle
     if (elements.calendarView) elements.calendarView.addEventListener('click', () => switchView('calendar'));
     if (elements.listView) elements.listView.addEventListener('click', () => switchView('list'));
@@ -837,6 +858,7 @@ function clearFilters() {
 
 function applyFilters() {
     log('🔍 Applying filters...');
+    currentEventPage = 1; // Reset pagination when filtering
 
     // Get values from select elements
     const typeValue = elements.typeFilter ? elements.typeFilter.value : 'todos';
@@ -844,6 +866,9 @@ function applyFilters() {
     const estadoValue = elements.estadoFilter ? elements.estadoFilter.value : 'todos';
     const tematicaValue = elements.tematicaFilter ? elements.tematicaFilter.value : 'todos';
     const unidadValue = elements.unidadFilter ? elements.unidadFilter.value : 'todos';
+
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? normalizeString(searchInput.value) : '';
 
     // Date
     let startDate = null, endDate = null;
@@ -854,6 +879,16 @@ function applyFilters() {
     }
 
     filteredEvents = eventsData.filter(event => {
+        // 0. Búsqueda por texto (Search)
+        if (searchTerm) {
+            const title = normalizeString(event.titulo || '');
+            const resp = normalizeString(event.responsable || '');
+            const tema = normalizeString(event.tematica || '');
+            const category = normalizeString(event.tipo || '');
+            if (!title.includes(searchTerm) && !resp.includes(searchTerm) && !tema.includes(searchTerm) && !category.includes(searchTerm)) {
+                return false;
+            }
+        }
         // 1. Tipo
         if (typeValue !== 'todos' && normalizeType(event.tipo) !== normalizeType(typeValue)) return false;
 
@@ -931,6 +966,7 @@ function updateCalendarEvents() {
         return {
             title: event.titulo,
             start: event.fecha,
+            allDay: true,
             extendedProps: {
                 originalEvent: event
             },
@@ -1012,17 +1048,32 @@ function renderEventList() {
     log('✅ Hiding noEvents');
     hideNoEvents();
 
+    // Pagination logic
+    const startIndex = 0;
+    const endIndex = currentEventPage * eventsPerPage;
+    const eventsToShow = sortedEvents.slice(startIndex, endIndex);
+
     log('🎨 Creating event cards HTML');
-    const eventsHTML = sortedEvents.map(event => createEventCard(event)).join('');
+    const eventsHTML = eventsToShow.map(event => createEventCard(event)).join('');
 
     log('📝 Setting eventsGrid innerHTML');
     elements.eventsGrid.innerHTML = eventsHTML;
+
+    // Load More Button visibility
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
+    if (loadMoreContainer) {
+        if (endIndex < sortedEvents.length) {
+            loadMoreContainer.style.display = 'block';
+        } else {
+            loadMoreContainer.style.display = 'none';
+        }
+    }
 
     log('🖱️ Adding click listeners');
     // Add click listeners to event cards
     document.querySelectorAll('.event-card').forEach((card, index) => {
         card.addEventListener('click', () => {
-            showEventModal(sortedEvents[index]);
+            showEventModal(eventsToShow[index]);
         });
     });
 

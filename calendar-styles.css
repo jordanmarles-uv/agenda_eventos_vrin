@@ -110,10 +110,33 @@
     background: rgba(232, 28, 37, 0.2) !important;
 }
 
-.fc-event-title {
-    font-weight: 500 !important;
+.fc-custom-event-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.fc-custom-title {
+    font-weight: 700 !important;
     font-size: 0.85rem !important;
-    color: var(--text-main) !important;
+    color: var(--primary) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.fc-custom-time {
+    font-size: 0.7rem !important;
+    color: var(--text-light) !important;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* More link styling */
