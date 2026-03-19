@@ -220,6 +220,10 @@
                     <button class="btn-new-event-toolbar" onclick="openEventForm()">
                         <i class="ph ph-plus-circle"></i> Nuevo evento
                     </button>
+                    <!-- Botón de Exportar a Excel (Solo SuperAdmin) -->
+                    <button class="btn-outline-sm superadmin-only" id="btn-export-excel" style="display:none; margin-left:10px; border-color: #107c41; color: #107c41;" onclick="exportToExcel()">
+                        <i class="ph ph-file-xls"></i> Exportar a Excel
+                    </button>
                 </div>
                 <div class="table-wrap">
                     <table class="admin-table" id="events-table">
@@ -486,6 +490,8 @@
     <script src="firebase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <!-- SheetJS para Exportar a Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="admin.js"></script>
 </body>
 

@@ -487,6 +487,78 @@ function filterTable() {
 }
 
 // =============================================
+// EXPORT EXCEL
+// =============================================
+function exportToExcel() {
+    // Only superadmin export feature
+    if (!isSuperAdmin) {
+        alert("Solo los administradores principales pueden exportar eventos.");
+        return;
+    }
+
+    if (!eventsCache || eventsCache.length === 0) {
+        alert("No hay eventos en la tabla para exportar.");
+        return;
+    }
+
+    const btn = $('btn-export-excel');
+    if (btn) btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Exportando...';
+
+    // Usar setTimeout para permitir que el botón muestre el loader antes de "colgar" el hilo procesando datos
+    setTimeout(() => {
+        try {
+            const dataToExport = eventsCache.map(e => ({
+                "Título": e.titulo || 'Sin título',
+                "Descripción": e.descripcion || '',
+                "Tipo": capitalize(e.tipo || ''),
+                "Modalidad": e.modalidad || '',
+                "Estado": e.estado || 'ABIERTO',
+                "Fase de Gestión": e.fase_gestion || 'Estructuración',
+                "Unidad de Gestión": e.unidad_gestion || '',
+                "Temática": e.tematica || '',
+                "Público Objetivo": e.dirigido_a || '',
+                "Fecha Inicio": e.fechas?.inicio || '',
+                "Fecha Fin": e.fechas?.fin || '',
+                "Mes": e.mes || '',
+                "Horario": e.horario || '',
+                "Duración": e.duracion || '',
+                "Cupos": e.cupos || '',
+                "Expositor/a": e.expositor || '',
+                "Link Inscripción/Info": e.enlace || '',
+                "Más Información": e.mas_info || '',
+                "Link Presentación": e.presentacion || '',
+                "Link Video": e.video || '',
+                "Creador (Email)": e.email_creador || ''
+            }));
+
+            // Convert json to worksheet
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            
+            // Adjust column widths automatically for 21 columns
+            const colWidths = [
+                {wch: 40}, {wch: 50}, {wch: 15}, {wch: 15}, {wch: 10}, 
+                {wch: 15}, {wch: 30}, {wch: 30}, {wch: 30}, {wch: 12}, 
+                {wch: 12}, {wch: 10}, {wch: 15}, {wch: 12}, {wch: 10}, 
+                {wch: 25}, {wch: 35}, {wch: 35}, {wch: 35}, {wch: 35}, 
+                {wch: 30}
+            ];
+            worksheet['!cols'] = colWidths;
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Eventos");
+            
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Eventos_VRIN_${today}.xlsx`);
+        } catch (error) {
+            console.error("Error al exportar a Excel:", error);
+            alert("Hubo un error al generar el archivo. Verifica la consola.");
+        } finally {
+            if (btn) btn.innerHTML = '<i class="ph ph-file-xls"></i> Exportar a Excel';
+        }
+    }, 100);
+}
+
+// =============================================
 // EVENT FORM
 // =============================================
 function openEventForm(eventData = null) {
